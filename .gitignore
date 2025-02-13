@@ -2,3 +2,6 @@
 geckodriver.exe
 GUI.ui
 __pycache__
+build
+dist
+main.spec

@@ -1,4 +1,5 @@
 import sys
+import os
 import threading
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog
 from PySide6.QtCore import QObject, Signal, Qt
@@ -21,7 +22,7 @@ class MainWindow(QMainWindow):
         self.log_signal = LogSignal()
         self.log_signal.update.connect(self.update_logs)
         self.init_table_model()
-        self.set_pictures("./img/alipay.png", "./img/paypal.png")
+        self.set_pictures(resource_path('./img/alipay.png') , resource_path('./img/paypal.png'))
         self.table_update_signal = UpdateTableSignal()
         self.table_update_signal.update.connect(self.update_table)
 
@@ -103,6 +104,14 @@ class MainWindow(QMainWindow):
             self.table_model.insertRow(row)
             self.table_model.setItem(row, 0, QStandardItem(original_filename))
         self.ui.processList.scrollToBottom()
+
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 
 if __name__ == "__main__":

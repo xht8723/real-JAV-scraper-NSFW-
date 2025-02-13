@@ -1,0 +1,3 @@
+selenium
+PySide6
+requests
