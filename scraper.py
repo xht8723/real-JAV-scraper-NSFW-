@@ -198,9 +198,9 @@ def manageFileStucture(dir, metadata, log_callback=None, update_callback=None):
     if log_callback:
         log_callback("Creating folder for " + metadata['Code'] + "\n")
 
-    folder_name = metadata["Code"] + ' [' + metadata['Studio'] + '] -' + metadata['Title'] + ' (' + metadata['Release Date'].split('-')[0] + ')'
+    folder_name = metadata["Code"] + ' [' + metadata['Studio'] + '] - ' + metadata['Title'] + ' (' + metadata['Release Date'].split('-')[0] + ')'
     if (len(folder_name) > 200):
-        folder_name = metadata["Code"] + ' [' + metadata['Studio'] + '] -' + metadata['Title'][:150] + ' (' + metadata['Release Date'].split('-')[0] + ')'
+        folder_name = metadata["Code"] + ' [' + metadata['Studio'] + '] - ' + metadata['Title'][:150] + ' (' + metadata['Release Date'].split('-')[0] + ')'
     invalid_chars = '<>:"/\\|?*'
     for char in invalid_chars:
         folder_name = folder_name.replace(char, '_')
