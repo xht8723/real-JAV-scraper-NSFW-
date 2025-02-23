@@ -73,9 +73,13 @@ class Ui_MainWindow(object):
         self.isHeadlessCheckbox.setToolTip("Hide browser window")
         group_layout.addWidget(self.isHeadlessCheckbox, 1, 0, 1, 2)
         
-        self.startBt = QPushButton("Start")
+        self.startBt = QPushButton("Start scrapping")
         self.startBt.setObjectName("startBt")
         group_layout.addWidget(self.startBt, 2, 0, 1, 2)
+
+        self.actressSearch = QPushButton("Format actress names")
+        self.actressSearch.setObjectName("actressSearch")
+        group_layout.addWidget(self.actressSearch, 3, 0, 1, 2)
         
         right_layout.addWidget(self.groupBox)
         
@@ -95,6 +99,7 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle("Real JAV Scrapper")
         self.startBt.setText("Start")
+        self.actressSearch.setText("Format actress names")
         self.directoryBt.setText("...")
         self.info.setText("Please consider supporting me!  :D")
         self.isHeadlessCheckbox.setText("Headless Mode")

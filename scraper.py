@@ -21,7 +21,7 @@ def retry_find_element(driver, by, value, retries=2, delay=2, log_callback=None)
             return element
         except (NoSuchElementException, TimeoutException, WebDriverException) as e:
             if log_callback:
-                log_callback(f"retrying... ({e})\n")
+                log_callback(f"retrying...\n")
             time.sleep(delay)
     return None
 

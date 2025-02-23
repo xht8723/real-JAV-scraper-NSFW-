@@ -6,6 +6,7 @@ from PySide6.QtCore import QObject, Signal, Qt
 from PySide6.QtGui import QStandardItemModel, QStandardItem, QPixmap
 from GUI import Ui_MainWindow
 import scraper
+import gfmerger
 
 class LogSignal(QObject):
     update = Signal(str, str)
@@ -40,6 +41,7 @@ class MainWindow(QMainWindow):
 
     def setup_connections(self):
         self.ui.startBt.clicked.connect(self.run_scraper)
+        self.ui.actressSearch.clicked.connect(self.run_gfmerger)
         self.ui.directoryBt.clicked.connect(self.select_directory)
 
     def select_directory(self):
@@ -57,6 +59,17 @@ class MainWindow(QMainWindow):
         self.ui.logs.clear()
         self.ui.startBt.setEnabled(False)
         threading.Thread(target=self.scraper_thread, args=(directory, isheadless), daemon=True).start()
+
+    def run_gfmerger(self):
+        isheadless = self.ui.isHeadlessCheckbox.isChecked()
+        directory = self.ui.Dir.text()
+        if not directory:
+            self.update_logs("Please select a directory first.\n")
+            return
+        
+        self.ui.logs.clear()
+        self.ui.actressSearch.setEnabled(False)
+        threading.Thread(target=self.gfmerger_thread, args=(directory, isheadless), daemon=True).start()
 
     def scraper_thread(self, directory, isheadless=False):
         def log_callback(message, color="black"):
@@ -83,10 +96,36 @@ class MainWindow(QMainWindow):
             self.ui.startBt.setEnabled(True)
             driver.quit()
         except Exception as e:
-            log_callback(f"Error: {str(e)}")
+            log_callback(f"Error: {str(e)}\n", "red")
         finally:
             driver.quit()
             self.ui.startBt.setEnabled(True)
+    
+    def gfmerger_thread(self, directory, isheadless=False):
+        def log_callback(message, color="black"):
+            self.log_signal.update.emit(message, color)
+        
+        try:
+            Local_actors = gfmerger.searchNFO(directory, log_callback=log_callback)
+            driver = gfmerger.startFirefox(log_callback=log_callback, isheadless=isheadless)
+            for actor in Local_actors:
+                innerHTML = gfmerger.processSearch(driver, actor, log_callback=log_callback)
+                if innerHTML == None:
+                    log_callback(f"Failed to get search results for {actor}\n", "orange")
+                    continue
+                names = gfmerger.processCardInfo(innerHTML, log_callback=log_callback)
+                gfmerger.modifyNFO(Local_actors, actor, names, log_callback=log_callback)
+                log_callback(f"Adding multi Names: {names}\n")
+            log_callback("\nFinished modifying names!\n", "green")
+            self.ui.actressSearch.setEnabled(True)
+            driver.quit()
+        except Exception as e:
+            log_callback(f"Error: {str(e)}\n", "red")
+        finally:
+            driver.quit()
+            self.ui.actressSearch.setEnabled(True)
+            
+
 
     def update_logs(self, message, color = "black"):
         if color != "black":
