@@ -90,7 +90,7 @@ def createNFO(path, metadata, log_callback=None):
         f.write('<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n')
         f.write('<movie>\n')
         f.write('\t<dateadded>' + str(date.today()) + ' ' + str(datetime.now()) + '</dateadded>\n')
-        f.write('\t<title>' + metadata['Title'] + '</title>\n')
+        f.write('\t<title>' + f"[{metadata['Code']}] " + metadata['Title'] + '</title>\n')
         f.write('\t<year>' + metadata['Release Date'].split('-')[0] + '</year>\n')
         f.write('\t<mpaa>XXX</mpaa>\n')
         f.write('\t<tmdbid>' + metadata['Code'] + '</tmdbid>\n')

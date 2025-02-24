@@ -10,7 +10,7 @@ import shutil
 import re
 import time
 
-def retry_find_element(driver, by, value, retries=2, delay=2, log_callback=None):
+def retry_find_element(driver, by, value, target = None, retries=3, delay=1, log_callback=None):
     for _ in range(retries):
         try:
             element = WebDriverWait(driver, 3).until(
@@ -18,8 +18,8 @@ def retry_find_element(driver, by, value, retries=2, delay=2, log_callback=None)
             )
             return element
         except (NoSuchElementException, TimeoutException, WebDriverException) as e:
-            if log_callback:
-                log_callback(f"retrying...\n")
+            if log_callback and target:
+                log_callback(f"retrying find element {target}...\n")
             time.sleep(delay)
     return None
 
@@ -44,7 +44,7 @@ def retry_clear(element, retries=3, delay=1, log_callback=None):
                 log_callback(f"retrying clear...\n")
             time.sleep(delay)
 
-def startFirefox(log_callback=None, isheadless=False):
+def startFirefox(url = None, log_callback=None, isheadless=False):
     if log_callback:
         log_callback("Starting browser\n")
     if isheadless:
@@ -53,27 +53,39 @@ def startFirefox(log_callback=None, isheadless=False):
         driver = webdriver.Firefox(options = options)
     else:
         driver = webdriver.Firefox()
-    driver.get("https://javmodel.com/index.html")
+    
+    if url:
+        driver.get(url)
+        if "404" in driver.title:
+            raise(Exception("Page not found. Please check connection."))
+        return driver
+    else:
+        driver.get("https://javmodel.com/index.html")
     return driver
 
 def processSearch(driver, name, log_callback=None):
     log_callback("searching for: " + name + "\n")
-    searchField = retry_find_element(driver, By.XPATH, "/html/body/nav[1]/div/button[2]", log_callback = log_callback)
-    if searchField == None:
-        raise(Exception("Search field not found. Please check connection."))
-    retry_click(searchField, log_callback=log_callback)
-    searchField = retry_find_element(driver, By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", log_callback=log_callback)
+    searchbtn = retry_find_element(driver, By.XPATH, "/html/body/nav[1]/div/button[2]",target="search button", log_callback = log_callback)
+    if searchbtn == None:
+        raise(Exception("Search button not found. Please check connection."))
+    retry_click(searchbtn, log_callback=log_callback)
+    searchField = retry_find_element(driver, By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", target="search field", log_callback=log_callback)
     if searchField == None:
         raise(Exception("Search field not found. Please check connection."))
     retry_clear(searchField, log_callback=log_callback)
     searchField.send_keys(name, Keys.ENTER)
-    result = retry_find_element(driver, By.XPATH, "/html/body/div[4]/div/div/div/div[1]/div/div[1]/a/span/img", log_callback=log_callback)
+    result = retry_find_element(driver, By.XPATH, "/html/body/div[4]/div/div/div/div[1]/div/div[1]/a/span/img", target= "first result",log_callback=log_callback)
     if result == None:
         return None
     retry_click(result, log_callback=log_callback)
-    card = retry_find_element(driver, By.XPATH, "/html/body/div[3]/div[3]/div/div[2]", log_callback=log_callback)
+    if "hd" in driver.current_url:
+        starring = retry_find_element(driver, By.XPATH, "/html/body/div[4]/div/div/div[2]/div[1]/div/div/table/tbody/tr[1]/td[2]/div/ul/li/a",target="starring", log_callback=log_callback)
+        if starring == None:
+            return None
+        retry_click(starring, log_callback=log_callback)
+    card = retry_find_element(driver, By.XPATH, "/html/body/div[3]/div[3]/div/div[2]", target= "card", log_callback=log_callback)
     if card == None:
-        raise(Exception("Card not found. Please check connection."))
+        return None
     return card.get_attribute("innerHTML")
 
 def processCardInfo(card, log_callback=None):
@@ -104,6 +116,10 @@ def searchNFO(dir, toDir=None, log_callback=None):
                 with open(os.path.join(root, file), 'r', encoding='utf-8') as f:
                     match = re.findall(r'<name>.*?</name>', f.read(), flags = re.UNICODE)
                     if match:
+                        if match == ['<name></name>']:
+                            if log_callback != None:
+                                log_callback(f"No actor name found in {file}\n", "orange")
+                            continue
                         for actor in match:
                             actorname = actor[6:-7]
                             if actorname not in actors:
@@ -112,6 +128,9 @@ def searchNFO(dir, toDir=None, log_callback=None):
                             else:
                                 filename = os.path.join(root, file)
                                 actors[actorname].append(filename)
+                    else:
+                        if log_callback != None:
+                            log_callback(f"No actor name found in {file}\n", "orange")
                 if toDir != None:
                     shutil.copy(os.path.join(root, file), os.path.join(toDir, file))
     if log_callback != None:                
@@ -126,11 +145,11 @@ def modifyNFO(actors, actor, names, toDir=None, log_callback=None):
                 new_lines = []
                 for line in data.splitlines():
                     new_lines.append(line)
-                    if '<tag>' in line and '</tag>' in line:
+                    if '<tag>' in line and '</tag>' in line and actor in line:
                         for name in names:
                             if name not in line:
                                 new_lines.append(f'\t<tag>{name}</tag>')
-                    if '<name>' in line and '</name>' in line:
+                    if '<name>' in line and '</name>' in line and actor in line:
                         for name in names:
                             if name not in line:
                                 new_lines.append(f'\t\t<name>{name}</name>')
