@@ -28,6 +28,8 @@ Faster actress formating.
 
 nfo back ups.
 
+Resume features that will start the search from where your last time at.
+
 ## How to install
 
 There will be .exe binary available in release page.
