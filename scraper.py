@@ -12,7 +12,7 @@ import time
 import requests
 
 # Function to retry finding an element
-def retry_find_element(driver, by, value, retries=2, delay=2, log_callback=None):
+def retry_find_element(driver, by, value, target = None, retries=3, delay=1, log_callback=None):
     for _ in range(retries):
         try:
             element = WebDriverWait(driver, 3).until(
@@ -20,10 +20,49 @@ def retry_find_element(driver, by, value, retries=2, delay=2, log_callback=None)
             )
             return element
         except (NoSuchElementException, TimeoutException, WebDriverException) as e:
-            if log_callback:
-                log_callback(f"retrying...\n")
+            if log_callback and target:
+                log_callback(f"retrying find element {target}...\n")
             time.sleep(delay)
     return None
+
+
+def retry_click(driver, by, value, retries=3, delay=1, log_callback=None):
+    for _ in range(retries):
+        try:
+            element = WebDriverWait(driver, 3).until(
+                EC.element_to_be_clickable((by, value))
+            )
+            element.click()
+            return True
+        except Exception as e:
+            if log_callback:
+                log_callback(f"Click failed: {str(e)}")
+            time.sleep(delay)
+    return False
+
+def retry_clear(driver, by, value, retries=3, delay=1, log_callback=None):
+    for _ in range(retries):
+        try:
+            element = WebDriverWait(driver, 3).until(
+                EC.visibility_of_element_located((by, value)))
+            element.clear()
+            return True
+        except Exception as e:
+            if log_callback:
+                log_callback(f"retrying clear...\n")
+            time.sleep(delay)
+
+def retry_send_keys(driver, by, value, AV, retries=3, delay=1, log_callback=None):
+    for _ in range(retries):
+        try:
+            element = WebDriverWait(driver, 3).until(
+                EC.visibility_of_element_located((by, value)))
+            element.send_keys(AV, Keys.ENTER)
+            return True
+        except Exception as e:
+            if log_callback:
+                log_callback(f"retrying send keys...\n")
+            time.sleep(delay)
 
 def startFirefox(log_callback=None, isheadless=True):
     if log_callback:
@@ -35,6 +74,13 @@ def startFirefox(log_callback=None, isheadless=True):
     else:
         driver = webdriver.Firefox()
     driver.get("https://jav.guru/")
+    try:
+         WebDriverWait(driver, 10).until(
+                lambda d: d.execute_script('return document.readyState') == 'complete'
+            )
+    except:
+        if log_callback:
+            log_callback("Failed to load jav.guru\n")
     return driver
 
 def processSearch(driver, dir, log_callback=None):
@@ -43,9 +89,10 @@ def processSearch(driver, dir, log_callback=None):
     for eachAV in banngoList:
         if log_callback:
             log_callback("searching for: " + eachAV + "\n")
-        searchField = retry_find_element(driver, By.ID, "searchm", log_callback=log_callback)
-        searchField.clear()
-        searchField.send_keys(eachAV, Keys.ENTER)
+        searchField = retry_find_element(driver, By.ID, "searchm", target= "search field",log_callback=log_callback)
+        retry_clear(driver, By.ID, "searchm", log_callback=log_callback)
+        retry_send_keys(driver, By.ID, "searchm", eachAV, log_callback=log_callback)
+
         try:
             WebDriverWait(driver, 5).until(EC.url_changes(driver.current_url))
         except:
@@ -53,19 +100,33 @@ def processSearch(driver, dir, log_callback=None):
                 log_callback("Seaching for " + eachAV + " timed out\n")
             continue
 
-        searchresults = retry_find_element(driver, By.CLASS_NAME, "imgg", log_callback=log_callback)
+        try:
+            WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.CLASS_NAME, "imgg")))
+        except:
+            if log_callback:
+                log_callback("Seaching for " + eachAV + " timed out\n")
+            continue
+
+        searchresults = retry_find_element(driver, By.CLASS_NAME, "imgg", target = "search result",log_callback=log_callback)
         if searchresults is None:
             if log_callback:
                 log_callback("No search results found for " + eachAV + "\n")
             continue
-        searchresults.click()
+
+        retry_click(driver, By.CLASS_NAME, "imgg", log_callback=log_callback)
 
         if log_callback:
             log_callback("getting metadata on " + eachAV + "\n")
-
-        title = retry_find_element(driver, By.CLASS_NAME, "titl", log_callback=log_callback)
-        metadata = retry_find_element(driver, By.CLASS_NAME, "infoleft", log_callback=log_callback)
-        cover = retry_find_element(driver, By.CLASS_NAME, "large-screenimg", log_callback=log_callback)
+        title = retry_find_element(driver, By.CLASS_NAME, "titl", target= "title", log_callback=log_callback)
+        if title is None:
+            retry_click(driver, By.CLASS_NAME, "imgg", log_callback=log_callback)
+            title = retry_find_element(driver, By.CLASS_NAME, "titl", target= "title", log_callback=log_callback)
+            if title is None:
+                if log_callback:
+                    log_callback("Failed to get title for " + eachAV + "\n", "orange")
+                continue
+        metadata = retry_find_element(driver, By.CLASS_NAME, "infoleft", target="metadata", log_callback=log_callback)
+        cover = retry_find_element(driver, By.CLASS_NAME, "large-screenimg", target="cover", log_callback=log_callback)
         img_element = cover.find_element(By.TAG_NAME, "img")
         img_src = img_element.get_attribute('src')
 
@@ -84,8 +145,7 @@ def createNFO(path, metadata, log_callback=None):
     if log_callback:
         log_callback("Creating NFO for " + metadata['Code'] + "\n")
 
-    name = metadata['Code'] +".nfo"
-    path = os.path.join(path, name) 
+    path = os.path.join(path, "movie.nfo") 
     with open(path, 'w+', encoding = 'utf-8') as f:
         f.write('<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n')
         f.write('<movie>\n')
@@ -142,8 +202,7 @@ def findAVIn(directory, log_callback=None, update_callback=None):
                     update_callback(file, "")
             else:
                 if log_callback:
-                    log_callback(f"Did not find any AV\n")
-                sys.exit(1)
+                    log_callback(f"skipped {file}\n")
     return pending_BanngoList, pending_fileList
 
 

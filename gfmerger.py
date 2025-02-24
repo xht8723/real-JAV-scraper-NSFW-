@@ -22,25 +22,42 @@ def retry_find_element(driver, by, value, target = None, retries=3, delay=1, log
             time.sleep(delay)
     return None
 
-def retry_click(element, retries=3, delay=1, log_callback=None):
+def retry_click(driver, by, value, retries=3, delay=1, log_callback=None):
     for _ in range(retries):
         try:
+            element = WebDriverWait(driver, 3).until(
+                EC.element_to_be_clickable((by, value))
+            )
             element.click()
             return True
         except Exception as e:
             if log_callback:
-                log_callback(f"retrying click...\n")
+                log_callback(f"Click failed: {str(e)}")
             time.sleep(delay)
-    return None
+    return False
 
-def retry_clear(element, retries=3, delay=1, log_callback=None):
+def retry_clear(driver, by, value, retries=3, delay=1, log_callback=None):
     for _ in range(retries):
         try:
+            element = WebDriverWait(driver, 3).until(
+                EC.visibility_of_element_located((by, value)))
             element.clear()
             return True
         except Exception as e:
             if log_callback:
                 log_callback(f"retrying clear...\n")
+            time.sleep(delay)
+
+def retry_send_keys(driver, by, value, AV, retries=3, delay=1, log_callback=None):
+    for _ in range(retries):
+        try:
+            element = WebDriverWait(driver, 3).until(
+                EC.visibility_of_element_located((by, value)))
+            element.send_keys(AV, Keys.ENTER)
+            return True
+        except Exception as e:
+            if log_callback:
+                log_callback(f"retrying send keys...\n")
             time.sleep(delay)
 
 def startFirefox(url = None, log_callback=None, isheadless=False):
@@ -60,28 +77,84 @@ def startFirefox(url = None, log_callback=None, isheadless=False):
         return driver
     else:
         driver.get("https://javmodel.com/index.html")
+        try:
+            WebDriverWait(driver, 10).until(
+                lambda d: d.execute_script('return document.readyState') == 'complete'
+            )
+        except:
+            if log_callback:
+                log_callback("Failed to load javmodel.com\n")
     return driver
 
 def processSearch(driver, name, log_callback=None):
+    try:
+        WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.XPATH, "/html/body/nav[1]/div/button[2]")))
+    except:
+        raise(Exception("Search button not found. Please check connection.1"))
+    
     log_callback("searching for: " + name + "\n")
     searchbtn = retry_find_element(driver, By.XPATH, "/html/body/nav[1]/div/button[2]",target="search button", log_callback = log_callback)
     if searchbtn == None:
-        raise(Exception("Search button not found. Please check connection."))
-    retry_click(searchbtn, log_callback=log_callback)
+        raise(Exception("Search button not found. Please check connection.2"))
+    
+    try:
+        WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.XPATH, "/html/body/nav[1]/div/button[2]")))
+    except:
+        raise(Exception("Search button not found. Please check connection.3"))
+    
+    retry_click(driver, By.XPATH, "/html/body/nav[1]/div/button[2]")
     searchField = retry_find_element(driver, By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", target="search field", log_callback=log_callback)
     if searchField == None:
-        raise(Exception("Search field not found. Please check connection."))
-    retry_clear(searchField, log_callback=log_callback)
-    searchField.send_keys(name, Keys.ENTER)
-    result = retry_find_element(driver, By.XPATH, "/html/body/div[4]/div/div/div/div[1]/div/div[1]/a/span/img", target= "first result",log_callback=log_callback)
+        retry_click(driver, By.XPATH, "/html/body/nav[1]/div/button[2]")
+        searchField = retry_find_element(driver, By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", target="search field", log_callback=log_callback)
+        if searchField == None:
+            if log_callback:
+                log_callback("Failed to find search field\n")
+            return None
+        
+    retry_clear(searchField,By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", log_callback=log_callback)
+    retry_send_keys(driver, By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", name, log_callback=log_callback)
+
+    try:
+        WebDriverWait(driver, 5).until(EC.url_changes(driver.current_url))
+    except:
+        if log_callback:
+            log_callback("Seaching for " + name + " timed out1\n")
+        return None
+    
+    try:
+        WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.XPATH, "/html/body/div[4]/div/div/div/div[1]/div/div[1]/a/span/img")))
+    except:
+        if log_callback:
+            log_callback("Seaching for " + name + " timed out2\n")
+        return None
+    
+    result = retry_find_element(driver, By.XPATH, "/html/body/div[4]/div/div/div/div[1]/div/div[1]/a/span/img", log_callback=log_callback)
     if result == None:
         return None
-    retry_click(result, log_callback=log_callback)
+    
+    retry_click(driver, By.XPATH, "/html/body/div[4]/div/div/div/div[1]/div/div[1]/a/span/img")
+
     if "hd" in driver.current_url:
-        starring = retry_find_element(driver, By.XPATH, "/html/body/div[4]/div/div/div[2]/div[1]/div/div/table/tbody/tr[1]/td[2]/div/ul/li/a",target="starring", log_callback=log_callback)
+        try:
+            WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.XPATH, "/html/body/div[4]/div/div/div[2]/div[1]/div/div/table/tbody/tr[1]/td[2]/div/ul/li/a")))
+        except:
+            if log_callback:
+                log_callback("Seaching for " + name + " timed out4\n")
+            return None
+    
+        starring = retry_find_element(driver, By.XPATH, "/html/body/div[4]/div/div/div[2]/div[1]/div/div/table/tbody/tr[1]/td[2]/div/ul/li/a", target= "starring", log_callback=log_callback)
         if starring == None:
             return None
-        retry_click(starring, log_callback=log_callback)
+        retry_click(starring, By.XPATH, "/html/body/div[4]/div/div/div[2]/div[1]/div/div/table/tbody/tr[1]/td[2]/div/ul/li/a")
+
+    try:
+        WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.XPATH, "/html/body/div[3]/div[3]/div/div[2]")))
+    except:
+        if log_callback:
+            log_callback("Seaching for " + name + " timed out5\n")
+        return None
+    
     card = retry_find_element(driver, By.XPATH, "/html/body/div[3]/div[3]/div/div[2]", target= "card", log_callback=log_callback)
     if card == None:
         return None
@@ -94,7 +167,10 @@ def processCardInfo(card, log_callback=None):
     if match:
         names.append(match[0][8:-5])
         altname = match[0][8:-5].split(" ")
-        altname = altname[1] + " " + altname[0]
+        if len(altname) > 1:
+            altname = altname[1] + " " + altname[0]
+        else:
+            altname = altname[0]
         names.append(altname)
     if cnMatch:
         temp = cnMatch[0][8:-5].split("  -  ")
@@ -107,17 +183,17 @@ def processCardInfo(card, log_callback=None):
     
 def searchNFO(dir, toDir=None, log_callback=None):
     nfoFormat = '.nfo'
-    blacklist = 'movie.nfo'
     actors = {}
     for root, dirs, files in os.walk(dir):
         for file in files:
-            if nfoFormat in file and file != blacklist:
+            if nfoFormat in file:
                 with open(os.path.join(root, file), 'r', encoding='utf-8') as f:
                     match = re.findall(r'<name>.*?</name>', f.read(), flags = re.UNICODE)
                     if match:
                         if match == ['<name></name>']:
                             if log_callback != None:
-                                log_callback(f"No actor name found in {file}\n", "orange")
+                                loc = os.path.join(root, file)
+                                log_callback(f"No actor name found in {loc}\n", "orange")
                             continue
                         for actor in match:
                             actorname = actor[6:-7]
@@ -129,7 +205,8 @@ def searchNFO(dir, toDir=None, log_callback=None):
                                 actors[actorname].append(filename)
                     else:
                         if log_callback != None:
-                            log_callback(f"No actor name found in {file}\n", "orange")
+                            loc = os.path.join(root, file)
+                            log_callback(f"No actor name found in {loc}\n", "orange")
                 if toDir != None:
                     pass
     if log_callback != None:                
@@ -143,27 +220,33 @@ def modifyNFO(actors, actor, names, toDir=None, log_callback=None):
         with open(file, 'r', encoding='utf-8') as f:
             data = f.read()
             match = re.findall(r'<actor>.*?</actor>', data, flags=re.UNICODE | re.DOTALL)
+            endmatch = re.search(r'</movie>', data, flags=re.UNICODE)
             if match:
                 for matchactor in match:
                     if actor in matchactor:
                         match = matchactor
                 altnames = ""
-                for name in names:
-                    altnames += f'\t\t<altname>{name}</altname>\n'
-                new_actor_data = f'<actor>\n\t\t<name>{primaryName}</name>\n{altnames}\n\t\t<tmdbid>{primaryName}</tmdbid>\n\t\t<role>Actress</role>\n\t\t<type>Actor</type>\n\t</actor>'
-                data = re.sub(re.escape(match), new_actor_data, data, flags=re.UNICODE | re.DOTALL)
-            
-            match = re.search(r'\n<tag>.*?</tag>', data, flags=re.UNICODE | re.DOTALL)
-            if match:
-                data = re.sub(r'\n<tag>.*?</tag>', '', data, flags=re.UNICODE | re.DOTALL)
-
-            match = re.search(r'</movie>', data, flags=re.UNICODE)
-            if match:
                 tags = ""
                 for name in names:
-                    tags += f'\t<tag>{name}</tag>\n'
+                    altnames += f'\t\t<altname>{name}</altname>\n'
+                    if endmatch:
+                        tags += f'\t<tag>{name}</tag>\n'
+                new_actor_data = f'<actor>\n\t\t<name>{primaryName}</name>\n{altnames}\n\t\t<tmdbid>{primaryName}</tmdbid>\n\t\t<role>Actress</role>\n\t\t<type>Actor</type>\n\t</actor>'
                 tags = tags.rstrip('\n')
+                data = re.sub(re.escape(match), new_actor_data, data, flags=re.UNICODE | re.DOTALL)
                 data = re.sub(r'</movie>', f'{tags}\n</movie>', data, flags=re.UNICODE)
+
+        data = "\n".join([line for line in data.splitlines() if line.strip() != ""])
+        unique_lines = set()
+        filtered_data = []
+        for line in data.splitlines():
+            if '<tag>' in line:
+                if line not in unique_lines:
+                    unique_lines.add(line)
+                    filtered_data.append(line)
+            else:
+                filtered_data.append(line)
+        data = "\n".join(filtered_data)
 
         if toDir is not None:
             with open(os.path.join(toDir, os.path.basename(file)), 'w', encoding='utf-8') as f:
