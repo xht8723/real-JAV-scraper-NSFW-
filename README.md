@@ -21,8 +21,11 @@ Pressure tested over 3000+ movies.
 
 ## Upcoming features
 download actress images and merge them into jellyfin.
+
 Optional recursive directory search.
+
 Faster actress formating.
+
 nfo back ups.
 
 ## How to install
