@@ -1,15 +1,23 @@
 # Real JAV Scraper (NSFW)
 
-Scrapes JAV metadata for media system like Jellyfin/Emby from javguru
+<img src="https://github.com/user-attachments/assets/b6e90801-561d-4778-ab99-d6dec2b170cd" alt="drawing" width="600"/>
+<img src="https://github.com/user-attachments/assets/7d1e2c30-a1fd-4ff3-b41e-c593d78ea659" alt="drawing" width="700"/>
+<img src="https://github.com/user-attachments/assets/17ece9e5-4f50-486c-8407-d2e8af1ea6ad" alt="drawing" width="700"/>
+
+
+## Features
+
+Scrapes JAV metadata for media system like Jellyfin/Emby from javguru. Actress info from javmodel
 
 Creating .nfo file, folder and cover image that are compatible with Jellyfin file structure.
 
 Using Selenium to simulate real browser to workaround cloudfare bots prevention.
 
-<img src="https://github.com/user-attachments/assets/b6e90801-561d-4778-ab99-d6dec2b170cd" alt="drawing" width="600"/>
-<img src="https://github.com/user-attachments/assets/7d1e2c30-a1fd-4ff3-b41e-c593d78ea659" alt="drawing" width="700"/>
-<img src="https://github.com/user-attachments/assets/17ece9e5-4f50-486c-8407-d2e8af1ea6ad" alt="drawing" width="700"/>
+Format actress names.
 
+Gather an actress's CN,JP,EN names and nicely organize them in nfo files so that jellyfin won't identify the same person as different actress.
+
+Pressure tested over 3000+ movies.
 
 ## How to install
 
