@@ -6,7 +6,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
 
 import os
-import shutil
 import re
 import time
 
@@ -132,7 +131,7 @@ def searchNFO(dir, toDir=None, log_callback=None):
                         if log_callback != None:
                             log_callback(f"No actor name found in {file}\n", "orange")
                 if toDir != None:
-                    shutil.copy(os.path.join(root, file), os.path.join(toDir, file))
+                    pass
     if log_callback != None:                
         log_callback(f"Found actors number: {len(actors)}\n")
     return actors
@@ -154,9 +153,9 @@ def modifyNFO(actors, actor, names, toDir=None, log_callback=None):
                 new_actor_data = f'<actor>\n\t\t<name>{primaryName}</name>\n{altnames}\n\t\t<tmdbid>{primaryName}</tmdbid>\n\t\t<role>Actress</role>\n\t\t<type>Actor</type>\n\t</actor>'
                 data = re.sub(re.escape(match), new_actor_data, data, flags=re.UNICODE | re.DOTALL)
             
-            match = re.search(r'<tag>.*?</tag>', data, flags=re.UNICODE)
+            match = re.search(r'\n<tag>.*?</tag>', data, flags=re.UNICODE | re.DOTALL)
             if match:
-                data = re.sub(r'<tag>.*?</tag>', '', data, flags=re.UNICODE)
+                data = re.sub(r'\n<tag>.*?</tag>', '', data, flags=re.UNICODE | re.DOTALL)
 
             match = re.search(r'</movie>', data, flags=re.UNICODE)
             if match:
@@ -185,17 +184,3 @@ def decidePrimaryName(names):
         if any_han.search(name):
             return name
     return names[0] if names else None
-
-# if __name__ == "__main__":
-#     dir = "Z:/r18/test"
-#     toDir = "Z:/r18/test/tt"
-
-#     actors = searchNFO(dir)
-#     driver = startFirefox()
-#     for actor in actors:
-#         card = processSearch(driver, actor)
-#         names = processCardInfo(card)
-#         print(names)
-#         modifyNFO(actors, actor, names)
-#     driver.quit()
-
