@@ -139,28 +139,52 @@ def searchNFO(dir, toDir=None, log_callback=None):
         
 
 def modifyNFO(actors, actor, names, toDir=None, log_callback=None):
-        for file in actors[actor]:
-            with open(file, 'r', encoding='utf-8') as f:
-                data = f.read()
-                new_lines = []
-                for line in data.splitlines():
-                    new_lines.append(line)
-                    if '<tag>' in line and '</tag>' in line and actor in line:
-                        for name in names:
-                            if name not in line:
-                                new_lines.append(f'\t<tag>{name}</tag>')
-                    if '<name>' in line and '</name>' in line and actor in line:
-                        for name in names:
-                            if name not in line:
-                                new_lines.append(f'\t\t<name>{name}</name>')
-                new_data = '\n'.join(new_lines)
-                if toDir != None:
-                    with open(os.path.join(toDir, os.path.basename(file)), 'w', encoding='utf-8') as f:
-                        f.write(new_data)
-                else:
-                    with open(file, 'w', encoding='utf-8') as f:
-                        f.write(new_data)
-            log_callback(f"Modified actress info for {file}\n")
+    primaryName = decidePrimaryName(names)
+    for file in actors[actor]:
+        with open(file, 'r', encoding='utf-8') as f:
+            data = f.read()
+            match = re.findall(r'<actor>.*?</actor>', data, flags=re.UNICODE | re.DOTALL)
+            if match:
+                for matchactor in match:
+                    if actor in matchactor:
+                        match = matchactor
+                altnames = ""
+                for name in names:
+                    altnames += f'\t\t<altname>{name}</altname>\n'
+                new_actor_data = f'<actor>\n\t\t<name>{primaryName}</name>\n{altnames}\n\t\t<tmdbid>{primaryName}</tmdbid>\n\t\t<role>Actress</role>\n\t\t<type>Actor</type>\n\t</actor>'
+                data = re.sub(re.escape(match), new_actor_data, data, flags=re.UNICODE | re.DOTALL)
+            
+            match = re.search(r'<tag>.*?</tag>', data, flags=re.UNICODE)
+            if match:
+                data = re.sub(r'<tag>.*?</tag>', '', data, flags=re.UNICODE)
+
+            match = re.search(r'</movie>', data, flags=re.UNICODE)
+            if match:
+                tags = ""
+                for name in names:
+                    tags += f'\t<tag>{name}</tag>\n'
+                tags = tags.rstrip('\n')
+                data = re.sub(r'</movie>', f'{tags}\n</movie>', data, flags=re.UNICODE)
+
+        if toDir is not None:
+            with open(os.path.join(toDir, os.path.basename(file)), 'w', encoding='utf-8') as f:
+                f.write(data)
+        else:
+            with open(file, 'w', encoding='utf-8') as f:
+                f.write(data)
+        log_callback(f"Modified actress info for {file}\n")
+
+def decidePrimaryName(names):
+    hiragana_characters = re.compile(r'[\u3040-\u309F]')
+    katakana_characters = re.compile(r'[\u30A0-\u30FF]')
+    any_han = re.compile(r'[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9faf\uF900-\uFAFF]')
+    for name in names:
+        if hiragana_characters.search(name) or katakana_characters.search(name):
+            return name
+    for name in names:
+        if any_han.search(name):
+            return name
+    return names[0] if names else None
 
 # if __name__ == "__main__":
 #     dir = "Z:/r18/test"
