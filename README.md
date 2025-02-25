@@ -1,8 +1,9 @@
 # Real JAV Scraper (NSFW)
 
-<img src="https://github.com/user-attachments/assets/b6e90801-561d-4778-ab99-d6dec2b170cd" alt="drawing" width="600"/>
+<img width="401" alt="屏幕截图 2025-02-25 074749" src="https://github.com/user-attachments/assets/8915057b-c0ad-436d-9e6f-17b710e819dd" alt="drawing" width="600"/>
 <img src="https://github.com/user-attachments/assets/7d1e2c30-a1fd-4ff3-b41e-c593d78ea659" alt="drawing" width="700"/>
 <img src="https://github.com/user-attachments/assets/17ece9e5-4f50-486c-8407-d2e8af1ea6ad" alt="drawing" width="700"/>
+
 
 
 ## Features
@@ -24,11 +25,9 @@ download actress images and merge them into jellyfin.
 
 Optional recursive directory search.
 
-Faster actress formating.
-
 nfo back ups.
 
-Resume features that will start the search from where your last time at.
+DLSITE ASMR support.
 
 ## How to install
 
@@ -51,11 +50,7 @@ Enter your folder path on the up right corner or just "..." to select one.
 
 Just click start.
 
-If Headless mode is unchecked, there will be a simulated browser window appear and you can watch it scrapping site.
-
-Check headless mode if you don't want see it.
-
-Your AV file must contain the AV label number. eg: "<ins>ABF-120</ins>WHATEVERwords.mp4"
+Your AV file must contain the AV label number. eg: "<ins>ABF-120</ins>WHATEVERwords.mp4" （MUST contain dash "-"）
 
 
 # 中文
@@ -63,6 +58,8 @@ Your AV file must contain the AV label number. eg: "<ins>ABF-120</ins>WHATEVERwo
 一个日本AV metadata爬虫，适配Jellyfin，Emby等媒体管理系统。metadata来源：javguru
 
 会采用jellyfin的文件管理结构，创建.nfo文件，并建立文件夹下载媒体封面。
+
+Format actress name会从javmodel网站搜刮女优的中文日文英文名，并把不同语言的名字并作一个人。
 
 采用Selenium模拟真实浏览器，从而绕过各自反爬虫限制。
 
@@ -79,8 +76,6 @@ github的release页面会有打包好的exe文件，直接用就好。
 
 选取或者自己输入放AV的文件夹地址，点击start就好。
 
-如果headless mode没有勾选，则会弹出模拟的firefox浏览器进行自动操作。
+重要：你的AV文件名里面必须要有番号和横杠。类似 “ABF-122澳门赌场1111.mp4”
 
-如果不想看，把headless mode勾上就可以了。
-
-重要：你的AV文件名里面必须要有番号。类似 “ABF-122澳门赌场1111.mp4”
+暂不支持没有横杠的文件。搜起来太地狱了。
