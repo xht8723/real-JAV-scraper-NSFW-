@@ -7,3 +7,6 @@ dist
 main.spec
 test.py
 compileBinary.bat
+NFO.json
+remove_util.py
+```

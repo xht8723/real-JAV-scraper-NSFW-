@@ -7,6 +7,7 @@ from PySide6.QtGui import QStandardItemModel, QStandardItem, QPixmap
 from GUI import Ui_MainWindow
 import scraper
 import gfmerger
+import util as ut
 
 class LogSignal(QObject):
     update = Signal(str, str)
@@ -50,26 +51,28 @@ class MainWindow(QMainWindow):
             self.ui.Dir.setText(directory)
 
     def run_scraper(self):
-        isheadless = self.ui.isHeadlessCheckbox.isChecked()
+        #isheadless = self.ui.isHeadlessCheckbox.isChecked()
         directory = self.ui.Dir.text()
         if not directory:
             self.update_logs("Please select a directory first.\n")
             return
 
         self.ui.logs.clear()
+        self.table_model.removeRows(0, self.table_model.rowCount())
         self.ui.startBt.setEnabled(False)
-        threading.Thread(target=self.scraper_thread, args=(directory, isheadless), daemon=True).start()
+        threading.Thread(target=self.scraper_thread, args=(directory,), daemon=True).start()
 
     def run_gfmerger(self):
-        isheadless = self.ui.isHeadlessCheckbox.isChecked()
+        #isheadless = self.ui.isHeadlessCheckbox.isChecked()
         directory = self.ui.Dir.text()
         if not directory:
             self.update_logs("Please select a directory first.\n")
             return
         
         self.ui.logs.clear()
+        self.table_model.removeRows(0, self.table_model.rowCount())
         self.ui.actressSearch.setEnabled(False)
-        threading.Thread(target=self.gfmerger_thread, args=(directory, isheadless), daemon=True).start()
+        threading.Thread(target=self.gfmerger_thread, args=(directory,), daemon=True).start()
 
     def scraper_thread(self, directory, isheadless=False):
         def log_callback(message, color="black"):
@@ -78,11 +81,12 @@ class MainWindow(QMainWindow):
         def update_table(original_filename, new_folder_name):
             self.table_update_signal.update.emit(original_filename, new_folder_name)
 
-        try:
-            scraper.findAVIn(directory, log_callback=log_callback, update_callback=update_table)
+        cached_NFO = ut.readJson("NFO.json")
 
-            driver = scraper.startFirefox(log_callback=log_callback, isheadless=isheadless)
-            metadataList = scraper.processSearch(driver, directory, log_callback=log_callback)
+        try:
+            driver = ut.startFirefox("https://jav.guru/", log_callback=log_callback, isheadless=isheadless)
+            banngoTuple = scraper.findAVIn(directory, log_callback=log_callback, update_callback=update_table)
+            metadataList = scraper.processSearch(driver, banngoTuple, cached_NFO, log_callback=log_callback)
 
             for metadata in metadataList:
                 data = scraper.parseInfo(metadata, log_callback=log_callback)
@@ -93,40 +97,46 @@ class MainWindow(QMainWindow):
                     log_callback(f"Error: {str(e)} occurred while processing {data['Title']}\n")
             
             log_callback("\nFinished processing all files!\n", "green")
+            ut.writeJson(cached_NFO, "NFO.json")
             self.ui.startBt.setEnabled(True)
             driver.quit()
         except Exception as e:
             log_callback(f"Error: {str(e)}\n", "red")
         finally:
             driver.quit()
+            ut.writeJson(cached_NFO, "NFO.json")
             self.ui.startBt.setEnabled(True)
     
     def gfmerger_thread(self, directory, isheadless=False):
         def log_callback(message, color="black"):
             self.log_signal.update.emit(message, color)
+
+        def update_table(original_filename, new_folder_name):
+            self.table_update_signal.update.emit(original_filename, new_folder_name)
         
+        cached_names = ut.readJson("names.json")
+
         try:
-            Local_actors = gfmerger.searchNFO(directory, log_callback=log_callback)
-            driver = gfmerger.startFirefox(log_callback=log_callback, isheadless=isheadless)
+            Local_actors = gfmerger.searchNFO(directory, log_callback=log_callback, update_callback=update_table)
+            driver = ut.startFirefox("https://javmodel.com/",log_callback=log_callback, isheadless=isheadless)
             for actor in Local_actors:
-                innerHTML = gfmerger.processSearch(driver, actor, log_callback=log_callback)
-                if innerHTML == None:
+                names = gfmerger.processSearch(driver, actor, cached_names, log_callback=log_callback)
+                if names == None:
                     log_callback(f"Failed to get search results for {actor}\n", "orange")
                     continue
-                names = gfmerger.processCardInfo(innerHTML, log_callback=log_callback)
-                gfmerger.modifyNFO(Local_actors, actor, names, log_callback=log_callback)
+                gfmerger.modifyNFO(Local_actors, actor, names, log_callback=log_callback, update_callback=update_table)
                 log_callback(f"Adding multi Names: {names}\n")
             log_callback("\nFinished modifying names!\n", "green")
+            ut.writeJson(cached_names, "names.json")
             self.ui.actressSearch.setEnabled(True)
             driver.quit()
         except Exception as e:
             log_callback(f"Error: {str(e)}\n", "red")
         finally:
             driver.quit()
+            ut.writeJson(cached_names, "names.json")
             self.ui.actressSearch.setEnabled(True)
             
-
-
     def update_logs(self, message, color = "black"):
         if color != "black":
             message = f'<span style="color:{color};">{message}</span>'
@@ -143,7 +153,6 @@ class MainWindow(QMainWindow):
             self.table_model.insertRow(row)
             self.table_model.setItem(row, 0, QStandardItem(original_filename))
         self.ui.processList.scrollToBottom()
-
 
 def resource_path(relative_path):
     try:

@@ -1,164 +1,121 @@
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
-
-import os
+import util as ut
 import re
-import time
+import os
 
-def retry_find_element(driver, by, value, target = None, retries=3, delay=1, log_callback=None):
-    for _ in range(retries):
-        try:
-            element = WebDriverWait(driver, 3).until(
-                EC.visibility_of_element_located((by, value))
-            )
-            return element
-        except (NoSuchElementException, TimeoutException, WebDriverException) as e:
-            if log_callback and target:
-                log_callback(f"retrying find element {target}...\n")
-            time.sleep(delay)
-    return None
+def processSearch(driver, name, cached_names, log_callback=None):
+    if name in cached_names:
+        return cached_names[name]
 
-def retry_click(driver, by, value, retries=3, delay=1, log_callback=None):
-    for _ in range(retries):
-        try:
-            element = WebDriverWait(driver, 3).until(
-                EC.element_to_be_clickable((by, value))
-            )
-            element.click()
-            return True
-        except Exception as e:
-            if log_callback:
-                log_callback(f"Click failed: {str(e)}")
-            time.sleep(delay)
-    return False
-
-def retry_clear(driver, by, value, retries=3, delay=1, log_callback=None):
-    for _ in range(retries):
-        try:
-            element = WebDriverWait(driver, 3).until(
-                EC.visibility_of_element_located((by, value)))
-            element.clear()
-            return True
-        except Exception as e:
-            if log_callback:
-                log_callback(f"retrying clear...\n")
-            time.sleep(delay)
-
-def retry_send_keys(driver, by, value, AV, retries=3, delay=1, log_callback=None):
-    for _ in range(retries):
-        try:
-            element = WebDriverWait(driver, 3).until(
-                EC.visibility_of_element_located((by, value)))
-            element.send_keys(AV, Keys.ENTER)
-            return True
-        except Exception as e:
-            if log_callback:
-                log_callback(f"retrying send keys...\n")
-            time.sleep(delay)
-
-def startFirefox(url = None, log_callback=None, isheadless=False):
-    if log_callback:
-        log_callback("Starting browser\n")
-    if isheadless:
-        options = webdriver.FirefoxOptions()
-        options.add_argument("-headless")
-        driver = webdriver.Firefox(options = options)
-    else:
-        driver = webdriver.Firefox()
-    
-    if url:
-        driver.get(url)
-        if "404" in driver.title:
-            raise(Exception("Page not found. Please check connection."))
-        return driver
-    else:
-        driver.get("https://javmodel.com/index.html")
-        try:
-            WebDriverWait(driver, 10).until(
-                lambda d: d.execute_script('return document.readyState') == 'complete'
-            )
-        except:
-            if log_callback:
-                log_callback("Failed to load javmodel.com\n")
-    return driver
-
-def processSearch(driver, name, log_callback=None):
-    try:
-        WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.XPATH, "/html/body/nav[1]/div/button[2]")))
-    except:
+    wait = ut.waitVisible(driver, By.XPATH, "/html/body/nav[1]/div/button[2]", log_callback=log_callback)
+    if not wait:
         raise(Exception("Search button not found. Please check connection.1"))
     
-    log_callback("searching for: " + name + "\n")
-    searchbtn = retry_find_element(driver, By.XPATH, "/html/body/nav[1]/div/button[2]",target="search button", log_callback = log_callback)
+    log_callback("Searching for: " + name + "\n")
+    searchbtn = ut.retry_find_element(driver, By.XPATH, "/html/body/nav[1]/div/button[2]",target="search button", log_callback = log_callback)
     if searchbtn == None:
         raise(Exception("Search button not found. Please check connection.2"))
     
-    try:
-        WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.XPATH, "/html/body/nav[1]/div/button[2]")))
-    except:
-        raise(Exception("Search button not found. Please check connection.3"))
+    driver.execute_script("arguments[0].scrollIntoView();", searchbtn)
+    ut.retry_click(driver, By.XPATH, "/html/body/nav[1]/div/button[2]")
+    wait = ut.waitVisible(driver, By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", log_callback=log_callback)
+    if not wait:
+        driver.execute_script("arguments[0].scrollIntoView();", searchbtn)
+        ut.retry_click(driver, By.XPATH, "/html/body/nav[1]/div/button[2]")
+        wait = ut.waitVisible(driver, By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", log_callback=log_callback)
+        if not wait:
+            raise(Exception("Search field not found. Please check connection.3"))
     
-    retry_click(driver, By.XPATH, "/html/body/nav[1]/div/button[2]")
-    searchField = retry_find_element(driver, By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", target="search field", log_callback=log_callback)
+    searchField = ut.retry_find_element(driver, By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", target="search field", log_callback=log_callback)
     if searchField == None:
-        retry_click(driver, By.XPATH, "/html/body/nav[1]/div/button[2]")
-        searchField = retry_find_element(driver, By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", target="search field", log_callback=log_callback)
-        if searchField == None:
-            if log_callback:
-                log_callback("Failed to find search field\n")
-            return None
-        
-    retry_clear(searchField,By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", log_callback=log_callback)
-    retry_send_keys(driver, By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", name, log_callback=log_callback)
-
-    try:
-        WebDriverWait(driver, 5).until(EC.url_changes(driver.current_url))
-    except:
+        raise(Exception("Search field not found. Please check connection.4"))
+    
+    currentURL = driver.current_url
+    driver.execute_script("arguments[0].scrollIntoView();", searchField)
+    ut.retry_clear(searchField,By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", log_callback=log_callback)
+    ut.retry_send_keys(driver, By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", name, log_callback=log_callback)
+    wait = ut.waitURLChange(driver, currentURL, log_callback=log_callback)
+    if not wait:
+        driver.execute_script("arguments[0].scrollIntoView();", searchField)
+        ut.retry_clear(searchField,By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", log_callback=log_callback)
+        ut.retry_send_keys(driver, By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", name, log_callback=log_callback)
+        wait = ut.waitURLChange(driver, currentURL, log_callback=log_callback)
+        if not wait:
+            raise(Exception("Search failed. Please check connection.5"))
+    wait = ut.waitVisible(driver, By.XPATH, "/html/body/div[4]/div/div", log_callback=log_callback)
+    if not wait:
         if log_callback:
             log_callback("Seaching for " + name + " timed out1\n")
         return None
     
     try:
-        WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.XPATH, "/html/body/div[4]/div/div/div/div[1]/div/div[1]/a/span/img")))
+        checkresult = driver.find_elements(By.XPATH, "/html/body/div[4]/div/div")[0].get_attribute("innerHTML")
+        if "Result Not Found" in checkresult:
+            if log_callback:
+                log_callback("No result found for " + name + "\n")
+            return None
     except:
+        pass
+
+    result = ut.retry_find_element(driver, By.XPATH, "/html/body/div[4]/div/div/div/div[1]/div/div[1]/a/span/img", log_callback=log_callback)
+    if result == None:
         if log_callback:
             log_callback("Seaching for " + name + " timed out2\n")
         return None
     
-    result = retry_find_element(driver, By.XPATH, "/html/body/div[4]/div/div/div/div[1]/div/div[1]/a/span/img", log_callback=log_callback)
-    if result == None:
-        return None
-    
-    retry_click(driver, By.XPATH, "/html/body/div[4]/div/div/div/div[1]/div/div[1]/a/span/img")
+    currentURL = driver.current_url
+    driver.execute_script("arguments[0].scrollIntoView();", result)
+    ut.retry_click(driver, By.XPATH, "/html/body/div[4]/div/div/div/div[1]/div/div[1]/a/span/img")
+    wait = ut.waitURLChange(driver, currentURL, log_callback=log_callback)
+    if not wait:
+        driver.execute_script("arguments[0].scrollIntoView();", result)
+        ut.retry_click(driver, By.XPATH, "/html/body/div[4]/div/div/div/div[1]/div/div[1]/a/span/img")
+        wait = ut.waitURLChange(driver, currentURL, log_callback=log_callback)
+        if not wait:
+            if log_callback:
+                log_callback("Seaching for " + name + " timed out3\n")
+            return None
 
     if "hd" in driver.current_url:
-        try:
-            WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.XPATH, "/html/body/div[4]/div/div/div[2]/div[1]/div/div/table/tbody/tr[1]/td[2]/div/ul/li/a")))
-        except:
+        wait = ut.waitVisible(driver, By.XPATH, "/html/body/div[4]/div/div/div[2]/div[1]/div/div/table/tbody/tr[1]/td[2]/div/ul/li/a", log_callback=log_callback)
+        if not wait:
             if log_callback:
                 log_callback("Seaching for " + name + " timed out4\n")
             return None
-    
-        starring = retry_find_element(driver, By.XPATH, "/html/body/div[4]/div/div/div[2]/div[1]/div/div/table/tbody/tr[1]/td[2]/div/ul/li/a", target= "starring", log_callback=log_callback)
+        starring = ut.retry_find_element(driver, By.XPATH, "/html/body/div[4]/div/div/div[2]/div[1]/div/div/table/tbody/tr[1]/td[2]/div/ul/li/a", target= "starring", log_callback=log_callback)
         if starring == None:
             return None
-        retry_click(starring, By.XPATH, "/html/body/div[4]/div/div/div[2]/div[1]/div/div/table/tbody/tr[1]/td[2]/div/ul/li/a")
+        currentURL = driver.current_url
+        driver.execute_script("arguments[0].scrollIntoView();", starring)
+        ut.retry_click(starring, By.XPATH, "/html/body/div[4]/div/div/div[2]/div[1]/div/div/table/tbody/tr[1]/td[2]/div/ul/li/a")
+        wait = ut.waitURLChange(driver, currentURL, log_callback=log_callback)
+        if not wait:
+            driver.execute_script("arguments[0].scrollIntoView();", starring)
+            ut.retry_click(starring, By.XPATH, "/html/body/div[4]/div/div/div[2]/div[1]/div/div/table/tbody/tr[1]/td[2]/div/ul/li/a")
+            wait = ut.waitURLChange(driver, currentURL, log_callback=log_callback)
+            if not wait:
+                if log_callback:
+                    log_callback("Seaching for " + name + " timed out5\n")
+                return None
 
-    try:
-        WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.XPATH, "/html/body/div[3]/div[3]/div/div[2]")))
-    except:
+    wait = ut.waitVisible(driver, By.XPATH, "/html/body/div[3]/div[3]/div/div[2]", log_callback=log_callback)
+    if not wait:
         if log_callback:
-            log_callback("Seaching for " + name + " timed out5\n")
+            log_callback("Seaching for " + name + " timed out6\n")
         return None
     
-    card = retry_find_element(driver, By.XPATH, "/html/body/div[3]/div[3]/div/div[2]", target= "card", log_callback=log_callback)
+    card = ut.retry_find_element(driver, By.XPATH, "/html/body/div[3]/div[3]/div/div[2]", target= "card", log_callback=log_callback)
     if card == None:
         return None
-    return card.get_attribute("innerHTML")
+    
+    innerHTML = card.get_attribute("innerHTML")
+    names = processCardInfo(innerHTML, log_callback=log_callback)
+    if name.lower() not in [n.lower() for n in names]:
+        if log_callback:
+            log_callback(f"Name {name} not found in search results\n")
+        return None
+    cached_names[name] = names
+    return names
 
 def processCardInfo(card, log_callback=None):
     names = []
@@ -179,9 +136,10 @@ def processCardInfo(card, log_callback=None):
             names.append(name)
     if log_callback != None:
         log_callback(f"Found names: {names}\n")
+    names = list(set(names)) 
     return names
     
-def searchNFO(dir, toDir=None, log_callback=None):
+def searchNFO(dir, toDir=None, log_callback=None, update_callback=None):
     nfoFormat = '.nfo'
     actors = {}
     for root, dirs, files in os.walk(dir):
@@ -190,16 +148,17 @@ def searchNFO(dir, toDir=None, log_callback=None):
                 with open(os.path.join(root, file), 'r', encoding='utf-8') as f:
                     match = re.findall(r'<name>.*?</name>', f.read(), flags = re.UNICODE)
                     if match:
-                        if match == ['<name></name>']:
-                            if log_callback != None:
-                                loc = os.path.join(root, file)
-                                log_callback(f"No actor name found in {loc}\n", "orange")
-                            continue
                         for actor in match:
+                            if actor == '<name></name>':
+                                continue
+                            if actor == '<name>Unknown</name>':
+                                continue
                             actorname = actor[6:-7]
                             if actorname not in actors:
                                 filename = os.path.join(root, file)
                                 actors[actorname] = [filename]
+                                if update_callback != None:
+                                    update_callback(actorname, '')
                             else:
                                 filename = os.path.join(root, file)
                                 actors[actorname].append(filename)
@@ -214,7 +173,7 @@ def searchNFO(dir, toDir=None, log_callback=None):
     return actors
         
 
-def modifyNFO(actors, actor, names, toDir=None, log_callback=None):
+def modifyNFO(actors, actor, names, toDir=None, log_callback=None, update_callback=None):
     primaryName = decidePrimaryName(names)
     for file in actors[actor]:
         with open(file, 'r', encoding='utf-8') as f:
@@ -254,7 +213,14 @@ def modifyNFO(actors, actor, names, toDir=None, log_callback=None):
         else:
             with open(file, 'w', encoding='utf-8') as f:
                 f.write(data)
-        log_callback(f"Modified actress info for {file}\n")
+        if log_callback != None:
+            log_callback(f"Modified actress info for {file}\n")
+        if update_callback != None:
+            nameString = ''
+            for name in names:
+                nameString += name + ', '
+            update_callback(actor, nameString[:-2])
+    return
 
 def decidePrimaryName(names):
     hiragana_characters = re.compile(r'[\u3040-\u309F]')

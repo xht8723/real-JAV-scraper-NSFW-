@@ -1,142 +1,104 @@
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
 import os
 import re
-import sys
+import util as ut
 from datetime import date, datetime
-import time
 import requests
 
-# Function to retry finding an element
-def retry_find_element(driver, by, value, target = None, retries=3, delay=1, log_callback=None):
-    for _ in range(retries):
-        try:
-            element = WebDriverWait(driver, 3).until(
-                EC.visibility_of_element_located((by, value))
-            )
-            return element
-        except (NoSuchElementException, TimeoutException, WebDriverException) as e:
-            if log_callback and target:
-                log_callback(f"retrying find element {target}...\n")
-            time.sleep(delay)
-    return None
-
-
-def retry_click(driver, by, value, retries=3, delay=1, log_callback=None):
-    for _ in range(retries):
-        try:
-            element = WebDriverWait(driver, 3).until(
-                EC.element_to_be_clickable((by, value))
-            )
-            element.click()
-            return True
-        except Exception as e:
-            if log_callback:
-                log_callback(f"Click failed: {str(e)}")
-            time.sleep(delay)
-    return False
-
-def retry_clear(driver, by, value, retries=3, delay=1, log_callback=None):
-    for _ in range(retries):
-        try:
-            element = WebDriverWait(driver, 3).until(
-                EC.visibility_of_element_located((by, value)))
-            element.clear()
-            return True
-        except Exception as e:
-            if log_callback:
-                log_callback(f"retrying clear...\n")
-            time.sleep(delay)
-
-def retry_send_keys(driver, by, value, AV, retries=3, delay=1, log_callback=None):
-    for _ in range(retries):
-        try:
-            element = WebDriverWait(driver, 3).until(
-                EC.visibility_of_element_located((by, value)))
-            element.send_keys(AV, Keys.ENTER)
-            return True
-        except Exception as e:
-            if log_callback:
-                log_callback(f"retrying send keys...\n")
-            time.sleep(delay)
-
-def startFirefox(log_callback=None, isheadless=True):
-    if log_callback:
-        log_callback("Starting browser\n")
-    if isheadless:
-        options = webdriver.FirefoxOptions()
-        options.add_argument("-headless")
-        driver = webdriver.Firefox(options = options)
-    else:
-        driver = webdriver.Firefox()
-    driver.get("https://jav.guru/")
-    try:
-         WebDriverWait(driver, 10).until(
-                lambda d: d.execute_script('return document.readyState') == 'complete'
-            )
-    except:
-        if log_callback:
-            log_callback("Failed to load jav.guru\n")
-    return driver
-
-def processSearch(driver, dir, log_callback=None):
-    banngoList, fileList = findAVIn(dir, log_callback=log_callback)
+def processSearch(driver, banngoTuple, cached_NFO, log_callback=None):
+    banngoList, fileList = banngoTuple
     infoList = []
     for eachAV in banngoList:
         if log_callback:
-            log_callback("searching for: " + eachAV + "\n")
-        searchField = retry_find_element(driver, By.ID, "searchm", target= "search field",log_callback=log_callback)
-        retry_clear(driver, By.ID, "searchm", log_callback=log_callback)
-        retry_send_keys(driver, By.ID, "searchm", eachAV, log_callback=log_callback)
-
-        try:
-            WebDriverWait(driver, 5).until(EC.url_changes(driver.current_url))
-        except:
+            log_callback(f"Searching for: {eachAV} \n")
+        
+        if eachAV in cached_NFO:
             if log_callback:
-                log_callback("Seaching for " + eachAV + " timed out\n")
+                log_callback(f"{eachAV} in cache.\n")
+            infoList.append(cached_NFO[eachAV])
             continue
 
-        try:
-            WebDriverWait(driver, 5).until(EC.visibility_of_element_located((By.CLASS_NAME, "imgg")))
-        except:
+        wait = ut.waitVisible(driver, By.ID, "searchm", log_callback=log_callback)
+        if not wait:
             if log_callback:
-                log_callback("Seaching for " + eachAV + " timed out\n")
+                log_callback(f"Search for {eachAV} timed out.\n")
             continue
 
-        searchresults = retry_find_element(driver, By.CLASS_NAME, "imgg", target = "search result",log_callback=log_callback)
+        searchField = ut.retry_find_element(driver, By.ID, "searchm", target= "search field",log_callback=log_callback)
+
+        current_url = driver.current_url
+        driver.execute_script("arguments[0].scrollIntoView();", searchField)
+        ut.retry_clear(driver, By.ID, "searchm", log_callback=log_callback)
+        ut.retry_send_keys(driver, By.ID, "searchm", eachAV, log_callback=log_callback)
+        wait = ut.waitURLChange(driver, current_url, log_callback=log_callback)
+        if not wait:
+            ut.retry_clear(driver, By.ID, "searchm", log_callback=log_callback)
+            ut.retry_send_keys(driver, By.ID, "searchm", eachAV, log_callback=log_callback)
+            wait = ut.waitURLChange(driver, current_url, log_callback=log_callback)
+            if not wait:
+                if log_callback:
+                    log_callback(f"Search for {eachAV} timed out.\n")
+                continue
+        
+        try:
+            checkresults = driver.find_elements(By.XPATH, "/html/body/div[1]/div/div[1]/main/div/div/div")[0].get_attribute("innerHTML")
+            if "nothing good matched." in checkresults:
+                if log_callback:
+                    log_callback(f"No search results found for {eachAV}.\n")
+                continue
+        except:
+            pass
+
+        wait = ut.waitVisible(driver, By.CLASS_NAME, "imgg", log_callback=log_callback)
+        if not wait:
+            if log_callback:
+                log_callback(f"Search for {eachAV} timed out.\n")
+            continue
+
+        searchresults = ut.retry_find_element(driver, By.CLASS_NAME, "imgg", target = "search result",log_callback=log_callback)
         if searchresults is None:
             if log_callback:
                 log_callback("No search results found for " + eachAV + "\n")
             continue
+        
+        current_url = driver.current_url
+        driver.execute_script("arguments[0].scrollIntoView();", searchresults)
+        ut.retry_click(driver, By.CLASS_NAME, "imgg", log_callback=log_callback)
+        wait = ut.waitURLChange(driver, current_url, log_callback=log_callback)
+        if not wait:
+            driver.execute_script("arguments[0].scrollIntoView();", searchresults)
+            ut.retry_click(driver, By.CLASS_NAME, "imgg", log_callback=log_callback)
+            wait = ut.waitURLChange(driver, current_url, log_callback=log_callback)
+            if not wait:
+                if log_callback:
+                    log_callback(f"Failed to click on search result for {eachAV}\n")
+                continue
 
-        retry_click(driver, By.CLASS_NAME, "imgg", log_callback=log_callback)
+        wait = ut.waitVisible(driver, By.CLASS_NAME, "titl", log_callback=log_callback)
+        if not wait:
+            if log_callback:
+                log_callback(f"Failed to open page for {eachAV}\n")
+            continue
 
         if log_callback:
             log_callback("getting metadata on " + eachAV + "\n")
-        title = retry_find_element(driver, By.CLASS_NAME, "titl", target= "title", log_callback=log_callback)
-        if title is None:
-            retry_click(driver, By.CLASS_NAME, "imgg", log_callback=log_callback)
-            title = retry_find_element(driver, By.CLASS_NAME, "titl", target= "title", log_callback=log_callback)
-            if title is None:
-                if log_callback:
-                    log_callback("Failed to get title for " + eachAV + "\n", "orange")
-                continue
-        metadata = retry_find_element(driver, By.CLASS_NAME, "infoleft", target="metadata", log_callback=log_callback)
-        cover = retry_find_element(driver, By.CLASS_NAME, "large-screenimg", target="cover", log_callback=log_callback)
+
+        title = ut.retry_find_element(driver, By.CLASS_NAME, "titl", target= "title", log_callback=log_callback)
+        metadata = ut.retry_find_element(driver, By.CLASS_NAME, "infoleft", target="metadata", log_callback=log_callback)
+        cover = ut.retry_find_element(driver, By.CLASS_NAME, "large-screenimg", target="cover", log_callback=log_callback)
         img_element = cover.find_element(By.TAG_NAME, "img")
         img_src = img_element.get_attribute('src')
 
-        infoList.append({
+        info = {
             "title": title.text,
             "metadata": metadata.text,
             "cover": img_src,
             "OGfilename": fileList[eachAV]
-        })
+        }
 
+        infoList.append(info)
+        cached_NFO[eachAV] = info
+        
     driver.quit()
     return infoList
 
@@ -206,7 +168,6 @@ def findAVIn(directory, log_callback=None, update_callback=None):
     return pending_BanngoList, pending_fileList
 
 
-#download image for a movie
 def downloadImage(banngo, url, path, log_callback=None):
     if log_callback:
         log_callback("Downloading image for " + banngo + "\n")
@@ -236,7 +197,6 @@ def parseInfo(info, log_callback=None):
             key, value = line.split(':', 1)
             movie_info[key.strip()] = value.strip()
 
-    # Convert Tags to a list
     if 'Tags' in movie_info:
         movie_info['Tags'] = [tag.strip() for tag in movie_info['Tags'].split(',')]
     
@@ -268,8 +228,7 @@ def manageFileStucture(dir, metadata, log_callback=None, update_callback=None):
     if not os.path.exists(abspath):
         os.makedirs(abspath)
 
-    fileExtension = metadata["OGfilename"].split('.')[-1]
-    os.rename(os.path.join(dir, metadata["OGfilename"]), abspath + '/' + metadata["Code"] + '.' + fileExtension)
+    os.rename(os.path.join(dir, metadata["OGfilename"]), abspath + '/' + metadata["OGfilename"])
     downloadImage(metadata['Code'], metadata['Image'], abspath, log_callback=log_callback)
     createNFO(abspath, metadata, log_callback=log_callback)
 

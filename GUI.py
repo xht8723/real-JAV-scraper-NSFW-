@@ -71,7 +71,7 @@ class Ui_MainWindow(object):
         self.isHeadlessCheckbox = QCheckBox("Headless Mode")
         self.isHeadlessCheckbox.setObjectName("isHeadlessCheckbox")
         self.isHeadlessCheckbox.setToolTip("Hide browser window")
-        group_layout.addWidget(self.isHeadlessCheckbox, 1, 0, 1, 2)
+        #group_layout.addWidget(self.isHeadlessCheckbox, 1, 0, 1, 2)
         
         self.startBt = QPushButton("Start scrapping")
         self.startBt.setObjectName("startBt")
