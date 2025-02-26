@@ -54,6 +54,11 @@ Just click start.
 
 Your AV file must contain the AV label number. eg: "<ins>ABF-120</ins>WHATEVERwords.mp4" （MUST contain dash "-"）
 
+## Some other tools recommendation
+
+Use [gfriends-inputer](https://github.com/gfriends/gfriends-inputer) to download actress image and merge into your jellyfin system.
+
+Use [ReNamer](https://www.den4b.com/products/renamer) for adding dashes or manay file name in general.
 
 # 中文
 
@@ -83,3 +88,9 @@ github的release页面会有打包好的exe文件，直接用就好。
 重要：你的AV文件名里面必须要有番号和横杠。类似 “ABF-122澳门赌场1111.mp4”
 
 暂不支持没有横杠的文件。搜起来太地狱了。
+
+## 一些其它工具推荐
+
+使用[gfriends-inputer](https://github.com/gfriends/gfriends-inputer)来下载并导入女优头像到jellyfin
+
+使用[ReNamer](https://www.den4b.com/products/renamer) 来重命名没有横杠“-”的文件。
