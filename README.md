@@ -8,7 +8,7 @@
 
 ## Features
 
-Scrapes JAV metadata for media system like Jellyfin/Emby from javguru. Actress info from javmodel
+Scrapes JAV metadata for media system like Jellyfin/Emby from javguru/javTrailers. Actress info from javmodel/javguru
 
 Creating .nfo file, folder and cover image that are compatible with Jellyfin file structure.
 
@@ -21,7 +21,6 @@ Gather an actress's CN,JP,EN names and nicely organize them in nfo files so that
 Pressure tested over 3000+ movies.
 
 ## Upcoming features
-download actress images and merge them into jellyfin.
 
 Optional recursive directory search.
 
@@ -62,7 +61,7 @@ Use [ReNamer](https://www.den4b.com/products/renamer) for adding dashes or manay
 
 # 中文
 
-一个日本AV metadata爬虫，适配Jellyfin，Emby等媒体管理系统。metadata来源：javguru
+一个日本AV metadata爬虫，适配Jellyfin，Emby等媒体管理系统。metadata来源：javguru/javatrailers/javmodel
 
 会采用jellyfin的文件管理结构，创建.nfo文件，并建立文件夹下载媒体封面。
 
