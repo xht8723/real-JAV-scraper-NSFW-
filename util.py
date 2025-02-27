@@ -1,10 +1,11 @@
+import time
+import json
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
-import time
-import json
+
 
 def retry_find_element(driver, by, value, target = None, retries=3, delay=1, log_callback=None):
     for _ in range(retries):

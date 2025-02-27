@@ -2,17 +2,20 @@ import sys
 import os
 import threading
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog
-from PySide6.QtCore import QObject, Signal, Qt
-from PySide6.QtGui import QStandardItemModel, QStandardItem, QPixmap
+from PySide6.QtCore import QObject, Signal
+from PySide6.QtGui import QStandardItemModel, QStandardItem
+from PySide6.QtGui import QPixmap
 from GUI import Ui_MainWindow
 import scraper
 import gfmerger
 import util as ut
 
 class LogSignal(QObject):
+    """Signal for updating GUI logs"""
     update = Signal(str, str)
 
 class UpdateTableSignal(QObject):
+    """Signal for updating GUI table"""
     update = Signal(str, str)
 
 class MainWindow(QMainWindow):
@@ -74,6 +77,10 @@ class MainWindow(QMainWindow):
         self.ui.actressSearch.setEnabled(False)
         threading.Thread(target=self.gfmerger_thread, args=(directory,), daemon=True).start()
 
+#-----------------------------------------------------
+# Run scraper thread once button pressed.
+# Scapes javguru and then javtrailers for metadata.
+#-----------------------------------------------------
     def scraper_thread(self, directory, isheadless=False):
         def log_callback(message, color="black"):
             self.log_signal.update.emit(message, color)
@@ -82,7 +89,7 @@ class MainWindow(QMainWindow):
             self.table_update_signal.update.emit(original_filename, new_folder_name)
 
         cached_NFO = ut.readJson("NFO.json")
-        missing = []
+        missing = [] # Stores entry for every failed javguru search
         try:
             banngoTuple = scraper.findAVIn(directory, log_callback=log_callback, update_callback=update_table)
             driver = ut.startFirefox("https://jav.guru/", log_callback=log_callback, isheadless=isheadless)
@@ -104,7 +111,7 @@ class MainWindow(QMainWindow):
             log_callback(f"Error: {str(e)}\n", "red")
 
         try:
-            if len(missing) > 0:
+            if len(missing) > 0: # Stores entry for every failed javguru search
                 cached_NFO = ut.readJson("NFO.json")
                 ut.gotoURL(driver, "https://javtrailers.com/")
                 for eachBanngo in missing:
@@ -126,7 +133,11 @@ class MainWindow(QMainWindow):
         self.ui.startBt.setEnabled(True)
         driver.quit()
         log_callback("\nFinished processing all files!\n", "green")
-
+        
+#-----------------------------------------------------
+# Run gfmerger thread once button pressed.
+# Scapes javmodel and then javguru to format actress names under same language.
+#-----------------------------------------------------
     
     def gfmerger_thread(self, directory, isheadless=False):
         def log_callback(message, color="black"):
@@ -204,6 +215,9 @@ class MainWindow(QMainWindow):
             self.table_model.insertRow(row)
             self.table_model.setItem(row, 0, QStandardItem(original_filename))
 
+#-----------------------------------------------------
+# Resource path for pyinstaller
+#-----------------------------------------------------
 def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
@@ -211,7 +225,9 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
-
+#-----------------------------------------------------
+# Main function
+#-----------------------------------------------------
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()

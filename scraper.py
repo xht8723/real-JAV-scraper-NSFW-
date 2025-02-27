@@ -1,24 +1,27 @@
-from selenium.webdriver.common.by import By
 import os
 import re
-import util as ut
 from datetime import date, datetime
 import requests
+from selenium.webdriver.common.by import By
+import util as ut
 
+#------------------------------------------------------------
+# Scrape javguru for a single item's metadata
+#------------------------------------------------------------
 def processSearchJavguru(driver, banngo, OGfile, cached_NFO, log_callback=None):
     if log_callback:
         log_callback(f"Searching for: {OGfile} on javguru\n")
     else:
         print(f"Searching for: {OGfile} on javguru\n")
     
-    if banngo in cached_NFO:
+    if banngo in cached_NFO:# check if the item is already in the json, return stored data if it is
         if log_callback:
             log_callback(f"{OGfile} in cache.\n")
         else:
             print(f"{OGfile} in cache.\n")
         return cached_NFO[banngo]
 
-    wait = ut.waitVisible(driver, By.ID, "searchm", log_callback=log_callback)
+    wait = ut.waitVisible(driver, By.ID, "searchm", log_callback=log_callback)# wait page load
     if not wait:
         if log_callback:
             log_callback(f"Search for {OGfile} timed out.\n")
@@ -31,9 +34,10 @@ def processSearchJavguru(driver, banngo, OGfile, cached_NFO, log_callback=None):
     current_url = driver.current_url
     driver.execute_script("arguments[0].scrollIntoView();", searchField)
     ut.retry_clear(driver, By.ID, "searchm", log_callback=log_callback)
-    ut.retry_send_keys(driver, By.ID, "searchm", banngo, log_callback=log_callback)
+    ut.retry_send_keys(driver, By.ID, "searchm", banngo, log_callback=log_callback)# search for the item
     wait = ut.waitURLChange(driver, current_url, log_callback=log_callback)
-    if not wait:
+
+    if not wait:# redundant retry. sometimes the first click won't go through
         ut.retry_clear(driver, By.ID, "searchm", log_callback=log_callback)
         ut.retry_send_keys(driver, By.ID, "searchm", banngo, log_callback=log_callback)
         wait = ut.waitURLChange(driver, current_url, log_callback=log_callback)
@@ -44,7 +48,7 @@ def processSearchJavguru(driver, banngo, OGfile, cached_NFO, log_callback=None):
                 print(f"Search for {OGfile} timed out.\n")
             return None
     
-    try:
+    try:# check if there are no search results. This has to be done separately because the HTML stucture is different
         checkresults = driver.find_elements(By.XPATH, "/html/body/div[1]/div/div[1]/main/div/div/div")[0].get_attribute("innerHTML")
         if "nothing good matched." in checkresults:
             if log_callback:
@@ -55,7 +59,7 @@ def processSearchJavguru(driver, banngo, OGfile, cached_NFO, log_callback=None):
     except:
         pass
 
-    wait = ut.waitVisible(driver, By.CLASS_NAME, "imgg", log_callback=log_callback)
+    wait = ut.waitVisible(driver, By.CLASS_NAME, "imgg", log_callback=log_callback)# wait for search results to load
     if not wait:
         if log_callback:
             log_callback(f"Search for {OGfile} timed out.\n")
@@ -72,7 +76,7 @@ def processSearchJavguru(driver, banngo, OGfile, cached_NFO, log_callback=None):
         return None
     
     first_result = ut.retry_find_element(driver, By.XPATH, '//*[@id="main"]/div[1]/div/div/div[2]/h2/a', target="first result", log_callback=log_callback).text
-    temp = first_result.replace('-', '').lower()
+    temp = first_result.replace('-', '').lower()# check if the search result matches the item we are looking for. case insensitive and remove hyphens
     nodashbanngo = banngo.replace('-', '').lower()
     if nodashbanngo not in temp:
         if log_callback:
@@ -83,7 +87,7 @@ def processSearchJavguru(driver, banngo, OGfile, cached_NFO, log_callback=None):
 
     current_url = driver.current_url
     driver.execute_script("arguments[0].scrollIntoView();", searchresults)
-    ut.retry_click(driver, By.CLASS_NAME, "imgg", log_callback=log_callback)
+    ut.retry_click(driver, By.CLASS_NAME, "imgg", log_callback=log_callback)# click on the search result
     wait = ut.waitURLChange(driver, current_url, log_callback=log_callback)
     if not wait:
         driver.execute_script("arguments[0].scrollIntoView();", searchresults)
@@ -128,13 +132,16 @@ def processSearchJavguru(driver, banngo, OGfile, cached_NFO, log_callback=None):
 
     return data
 
+#------------------------------------------------------------
+# Scrape javtrailers for a single item's metadata
+#------------------------------------------------------------
 def processSearchJavtrailers(driver, banngo, OGfile, cached_NFO, log_callback=None):
     if log_callback:
         log_callback(f"Searching for: {OGfile} on javtrailers\n")
     else:
         print(f"Searching for: {OGfile} on javtrailers\n")
     
-    if banngo in cached_NFO:
+    if banngo in cached_NFO:# check if the item is already in the json, return stored data if it is
         if log_callback:
             log_callback(f"{OGfile} in cache.\n")
         else:
@@ -153,7 +160,7 @@ def processSearchJavtrailers(driver, banngo, OGfile, cached_NFO, log_callback=No
     current_url = driver.current_url
     driver.execute_script("arguments[0].scrollIntoView();", searchField)
     ut.retry_clear(driver, By.ID, "searchBox", log_callback=log_callback)
-    ut.retry_send_keys(driver, By.ID, "searchBox", banngo, log_callback=log_callback)
+    ut.retry_send_keys(driver, By.ID, "searchBox", banngo, log_callback=log_callback)# search for the item
     wait = ut.waitURLChange(driver, current_url, log_callback=log_callback)
     if not wait:
         ut.retry_clear(driver, By.ID, "searchBox", log_callback=log_callback)
@@ -183,7 +190,7 @@ def processSearchJavtrailers(driver, banngo, OGfile, cached_NFO, log_callback=No
         return None
     
     try:
-        driver.refresh()
+        driver.refresh()# javtrailer site has a bug where the search results are not loaded properly. This is a workaround
         checkresults = None
         checkresults = driver.find_elements(By.XPATH, '//*[@id="search"]')[0].get_attribute("innerHTML")
         if "No videos available" in checkresults:
@@ -251,8 +258,9 @@ def processSearchJavtrailers(driver, banngo, OGfile, cached_NFO, log_callback=No
 
     return data
 
-
-
+#------------------------------------------------------------
+# Create NFO file
+#------------------------------------------------------------
 def createNFO(path, metadata, log_callback=None):
     if log_callback:
         log_callback("Creating NFO for " + metadata['Code'] + "\n")
@@ -287,6 +295,9 @@ def createNFO(path, metadata, log_callback=None):
         f.write('\t<thumb>' + metadata['Image'] + '</thumb>\n')
         f.write('</movie>')
 
+#------------------------------------------------------------
+# Find AV files in directory
+#------------------------------------------------------------
 def findAVIn(directory, log_callback=None, update_callback=None):
     file_format = [
     '.mp4',
@@ -305,8 +316,8 @@ def findAVIn(directory, log_callback=None, update_callback=None):
     pending_BanngoList = []
     pending_fileList = {}
     for file in file_list:
-        filename, format = os.path.splitext(file)
-        if format in file_format:
+        filename, file_extension = os.path.splitext(file)
+        if file_extension in file_format:
             match = pattern.findall(filename)
             if match:
                 banngo = match[0].upper()
@@ -325,19 +336,25 @@ def findAVIn(directory, log_callback=None, update_callback=None):
                     print(f"skipped {file}\n")
     return pending_BanngoList, pending_fileList
 
+#------------------------------------------------------------
+# Download image
+#------------------------------------------------------------
 def downloadImage(banngo, url, path, log_callback=None):
     if log_callback:
         log_callback("Downloading image for " + banngo + "\n")
     else:
         print("Downloading image for " + banngo + "\n")
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
         path = path + '/folder.jpg'
         with open(path, 'wb') as f:
             f.write(response.content)
     except:
         pass
 
+#------------------------------------------------------------
+# Parse metadata specific to javguru
+#------------------------------------------------------------
 def parseInfoJavguru(info, log_callback=None):
     pattern = re.compile(r'\[([a-zA-Z]+\d*?-\d+[a-zA-Z]?)\]')
     title = re.sub(pattern, '', info['title']).strip()
@@ -371,6 +388,9 @@ def parseInfoJavguru(info, log_callback=None):
 
     return movie_info
 
+#------------------------------------------------------------
+# Parse metadata specific to javtrailers
+#------------------------------------------------------------
 def parseInfoJavtrailers(info, log_callback=None):
     html = info['metadata']
     pattern = re.compile(r'\[([a-zA-Z]+\d*?-\d+[a-zA-Z]?)\]')
@@ -378,19 +398,19 @@ def parseInfoJavtrailers(info, log_callback=None):
     cover = info['cover']
     OGfilename = info['OGfilename']
     DID_id = re.search(r'DVD ID:</span>\s*(.*?)\s*</p>', html)
-    date = re.search(r'Release Date:</span>\s*(.*?)</p>', html)
+    release_date = re.search(r'Release Date:</span>\s*(.*?)</p>', html)
     studio = re.search(r'/studios/.*?" class="badge bg-light text-dark mr-2 badge-link">(.*?)</a>', html)
     tags = re.findall(r'/categories/.*?" class="badge bg-light text-dark badge-link">(.*?)</a>', html)
     actress = re.findall(r'/casts/.*?" class="badge bg-light text-dark mr-2 badge-link">(.*?)</a>', html)
     
-    if date:
-        date = datetime.strptime(date.group(1), '%d %b %Y').strftime('%Y-%m-%d')
+    if release_date:
+        release_date = datetime.strptime(release_date.group(1), '%d %b %Y').strftime('%Y-%m-%d')
     else:
-        date = "Unknown"
+        release_date = "Unknown"
 
     if actress:
-        for each in actress:
-            actress = [re.sub(r'[^\x00-\x7F]+', '', act) for act in actress]
+        actress = [re.sub(r'[^\x00-\x7F]+', '', act) for act in actress]# remove japanese characters
+        actress = [act.strip() for act in actress]
     else:
         actress = ["Unknown"]
 
@@ -412,7 +432,7 @@ def parseInfoJavtrailers(info, log_callback=None):
     movie_info['Image'] = cover
     movie_info['OGfilename'] = OGfilename
     movie_info['Code'] = DID_id
-    movie_info['Release Date'] = date
+    movie_info['Release Date'] = release_date
     movie_info['Studio'] = studio
     movie_info['Tags'] = tags
     movie_info['Actress'] = actress
@@ -420,14 +440,9 @@ def parseInfoJavtrailers(info, log_callback=None):
 
     return movie_info
 
-
-
-
-
-
-
-
-
+#------------------------------------------------------------
+# Create folder structure for the item
+#------------------------------------------------------------
 def manageFileStucture(dir, metadata, log_callback=None, update_callback=None):
     if log_callback:
         log_callback("Creating folder for " + metadata['Code'] + "\n")

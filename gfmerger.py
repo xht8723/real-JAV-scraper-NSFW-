@@ -1,8 +1,11 @@
-from selenium.webdriver.common.by import By
-import util as ut
 import re
 import os
+from selenium.webdriver.common.by import By
+import util as ut
 
+#----------------------------------------------
+# Scrape actress names from javmodels
+#----------------------------------------------
 def processSearch(driver, name, cached_names, log_callback=None):
     if name in cached_names:
         return cached_names[name]
@@ -17,7 +20,7 @@ def processSearch(driver, name, cached_names, log_callback=None):
         print("Searching for: " + name + "\n")
 
     searchbtn = ut.retry_find_element(driver, By.XPATH, "/html/body/nav[1]/div/button[2]",target="search button", log_callback = log_callback)
-    if searchbtn == None:
+    if searchbtn is None:
         raise(Exception("Search button not found. Please check connection.2"))
     
     driver.execute_script("arguments[0].scrollIntoView();", searchbtn)
@@ -31,7 +34,7 @@ def processSearch(driver, name, cached_names, log_callback=None):
             raise(Exception("Search field not found. Please check connection.3"))
     
     searchField = ut.retry_find_element(driver, By.XPATH, '//*[@id="flq_popup_search"]/div/div[1]/div/div/form/input', target="search field", log_callback=log_callback)
-    if searchField == None:
+    if searchField is None:
         raise(Exception("Search field not found. Please check connection.4"))
     
     currentURL = driver.current_url
@@ -66,7 +69,7 @@ def processSearch(driver, name, cached_names, log_callback=None):
         pass
 
     result = ut.retry_find_element(driver, By.XPATH, "/html/body/div[4]/div/div/div/div[1]/div/div[1]/a/span/img", log_callback=log_callback)
-    if result == None:
+    if result is None:
         if log_callback:
             log_callback("Seaching for " + name + " timed out2\n")
         else:
@@ -97,7 +100,7 @@ def processSearch(driver, name, cached_names, log_callback=None):
                 print("Seaching for " + name + " timed out4\n")
             return None
         starring = ut.retry_find_element(driver, By.XPATH, "/html/body/div[4]/div/div/div[2]/div[1]/div/div/table/tbody/tr[1]/td[2]/div/ul/li/a", target= "starring", log_callback=log_callback)
-        if starring == None:
+        if starring is None:
             return None
         currentURL = driver.current_url
         driver.execute_script("arguments[0].scrollIntoView();", starring)
@@ -123,7 +126,7 @@ def processSearch(driver, name, cached_names, log_callback=None):
         return None
     
     card = ut.retry_find_element(driver, By.XPATH, "/html/body/div[3]/div[3]/div/div[2]", target= "card", log_callback=log_callback)
-    if card == None:
+    if card is None:
         return None
     
     innerHTML = card.get_attribute("innerHTML")
@@ -137,6 +140,9 @@ def processSearch(driver, name, cached_names, log_callback=None):
     cached_names[name] = names
     return names
 
+#----------------------------------------------
+# Scrape actress names from javguru
+#----------------------------------------------
 def processSearchJavguru(driver, name, cached_names, log_callback=None):
     if name in cached_names:
         return cached_names[name]
@@ -151,7 +157,7 @@ def processSearchJavguru(driver, name, cached_names, log_callback=None):
         print("Searching for: " + name + "\n")
 
     searchField = ut.retry_find_element(driver, By.XPATH, '//*[@id="main"]/div[1]/div[2]/form/input', target="search field", log_callback=log_callback)
-    if searchField == None:
+    if searchField is None:
         raise(Exception("Search field not found. Please check connection.2"))
     
     currentURL = driver.current_url
@@ -186,7 +192,7 @@ def processSearchJavguru(driver, name, cached_names, log_callback=None):
         return None
     
     enName = ut.retry_find_element(driver, By.XPATH, '//*[@id="main"]/div[2]/div/a/div/div[2]/span[1]', target="enName", log_callback=log_callback)
-    if enName == None:
+    if enName is None:
         if log_callback:
             log_callback("Seaching for " + name + " timed out2\n")
         else:
@@ -194,7 +200,7 @@ def processSearchJavguru(driver, name, cached_names, log_callback=None):
         return None
     
     jpName = ut.retry_find_element(driver, By.XPATH, '//*[@id="main"]/div[2]/div/a/div/div[2]/span[3]', target="jpName", log_callback=log_callback)
-    if jpName == None:
+    if jpName is None:
         if log_callback:
             log_callback("Seaching for " + name + " timed out3\n")
         else:
@@ -203,7 +209,7 @@ def processSearchJavguru(driver, name, cached_names, log_callback=None):
 
     enName = enName.text
     enNameR = enName.split(" ")
-    enNameR = ' '.join(enNameR[::-1])
+    enNameR = ' '.join(enNameR[::-1])# reverse first and last name
     jpName = jpName.text
     if name.lower() not in [enName.lower(), jpName.lower(), enNameR.lower()]:
         if log_callback:
@@ -215,6 +221,9 @@ def processSearchJavguru(driver, name, cached_names, log_callback=None):
     cached_names[name] = [enName, jpName, enNameR]
     return [enName, jpName, enNameR]
 
+#----------------------------------------------
+# process actress names from card info for javmodels
+#----------------------------------------------
 
 def processCardInfo(card, log_callback=None):
     names = []
@@ -233,13 +242,16 @@ def processCardInfo(card, log_callback=None):
         for name in temp:
             name = name.strip(" ")
             names.append(name)
-    if log_callback != None:
+    if log_callback is not None:
         log_callback(f"Found names: {names}\n")
     else:
         print(f"Found names: {names}\n")
-    names = list(set(names)) 
+    names = list(set(names))
     return names
-    
+
+#----------------------------------------------
+# recursive search for actress names in nfo files under directory
+#----------------------------------------------
 def searchNFO(dir, toDir=None, log_callback=None, update_callback=None):
     nfoFormat = '.nfo'
     actors = {}
@@ -258,26 +270,29 @@ def searchNFO(dir, toDir=None, log_callback=None, update_callback=None):
                             if actorname not in actors:
                                 filename = os.path.join(root, file)
                                 actors[actorname] = [filename]
-                                if update_callback != None:
+                                if update_callback is not None:
                                     update_callback(actorname, '')
                             else:
                                 filename = os.path.join(root, file)
                                 actors[actorname].append(filename)
                     else:
-                        if log_callback != None:
+                        if log_callback is not None:
                             loc = os.path.join(root, file)
                             log_callback(f"No actor name found in {loc}\n", "orange")
                         else:
                             loc = os.path.join(root, file)
                             print(f"No actor name found in {loc}\n")
-                if toDir != None:
+                if toDir is not None:
                     pass
-    if log_callback != None:                
+    if log_callback is not None:                
         log_callback(f"Found actors number: {len(actors)}\n")
     else:
         print(f"Found actors number: {len(actors)}\n")
     return actors
-        
+
+#----------------------------------------------
+# modify actress info in nfo files(and tags)
+#----------------------------------------------
 def modifyNFO(actors, actor, names, toDir=None, log_callback=None, update_callback=None):
     primaryName = decidePrimaryName(names)
     for file in actors[actor]:
@@ -318,17 +333,20 @@ def modifyNFO(actors, actor, names, toDir=None, log_callback=None, update_callba
         else:
             with open(file, 'w', encoding='utf-8') as f:
                 f.write(data)
-        if log_callback != None:
+        if log_callback is not None:
             log_callback(f"Modified actress info for {file}\n")
         else:
             print(f"Modified actress info for {file}\n")
-        if update_callback != None:
+        if update_callback is not None:
             nameString = ''
             for name in names:
                 nameString += name + ', '
             update_callback(actor, nameString[:-2])
     return
 
+#----------------------------------------------
+# decide primary name from names. Japanese names are preferred
+#----------------------------------------------
 def decidePrimaryName(names):
     hiragana_characters = re.compile(r'[\u3040-\u309F]')
     katakana_characters = re.compile(r'[\u30A0-\u30FF]')
