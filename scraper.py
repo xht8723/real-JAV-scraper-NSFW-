@@ -5,107 +5,259 @@ import util as ut
 from datetime import date, datetime
 import requests
 
-def processSearch(driver, banngoTuple, cached_NFO, log_callback=None):
-    banngoList, fileList = banngoTuple
-    infoList = []
-    for eachAV in banngoList:
+def processSearchJavguru(driver, banngo, OGfile, cached_NFO, log_callback=None):
+    if log_callback:
+        log_callback(f"Searching for: {OGfile} on javguru\n")
+    else:
+        print(f"Searching for: {OGfile} on javguru\n")
+    
+    if banngo in cached_NFO:
         if log_callback:
-            log_callback(f"Searching for: {eachAV} \n")
-        
-        if eachAV in cached_NFO:
-            if log_callback:
-                log_callback(f"{eachAV} in cache.\n")
-            infoList.append(cached_NFO[eachAV])
-            continue
+            log_callback(f"{OGfile} in cache.\n")
+        else:
+            print(f"{OGfile} in cache.\n")
+        return cached_NFO[banngo]
 
-        wait = ut.waitVisible(driver, By.ID, "searchm", log_callback=log_callback)
-        if not wait:
-            if log_callback:
-                log_callback(f"Search for {eachAV} timed out.\n")
-            continue
+    wait = ut.waitVisible(driver, By.ID, "searchm", log_callback=log_callback)
+    if not wait:
+        if log_callback:
+            log_callback(f"Search for {OGfile} timed out.\n")
+        else:
+            print(f"Search for {OGfile} timed out.\n")
+        return None
 
-        searchField = ut.retry_find_element(driver, By.ID, "searchm", target= "search field",log_callback=log_callback)
+    searchField = ut.retry_find_element(driver, By.ID, "searchm", target= "search field",log_callback=log_callback)
 
-        current_url = driver.current_url
-        driver.execute_script("arguments[0].scrollIntoView();", searchField)
+    current_url = driver.current_url
+    driver.execute_script("arguments[0].scrollIntoView();", searchField)
+    ut.retry_clear(driver, By.ID, "searchm", log_callback=log_callback)
+    ut.retry_send_keys(driver, By.ID, "searchm", banngo, log_callback=log_callback)
+    wait = ut.waitURLChange(driver, current_url, log_callback=log_callback)
+    if not wait:
         ut.retry_clear(driver, By.ID, "searchm", log_callback=log_callback)
-        ut.retry_send_keys(driver, By.ID, "searchm", eachAV, log_callback=log_callback)
+        ut.retry_send_keys(driver, By.ID, "searchm", banngo, log_callback=log_callback)
         wait = ut.waitURLChange(driver, current_url, log_callback=log_callback)
         if not wait:
-            ut.retry_clear(driver, By.ID, "searchm", log_callback=log_callback)
-            ut.retry_send_keys(driver, By.ID, "searchm", eachAV, log_callback=log_callback)
-            wait = ut.waitURLChange(driver, current_url, log_callback=log_callback)
-            if not wait:
-                if log_callback:
-                    log_callback(f"Search for {eachAV} timed out.\n")
-                continue
-        
-        try:
-            checkresults = driver.find_elements(By.XPATH, "/html/body/div[1]/div/div[1]/main/div/div/div")[0].get_attribute("innerHTML")
-            if "nothing good matched." in checkresults:
-                if log_callback:
-                    log_callback(f"No search results found for {eachAV}.\n")
-                continue
-        except:
-            pass
-
-        wait = ut.waitVisible(driver, By.CLASS_NAME, "imgg", log_callback=log_callback)
-        if not wait:
             if log_callback:
-                log_callback(f"Search for {eachAV} timed out.\n")
-            continue
-
-        searchresults = ut.retry_find_element(driver, By.CLASS_NAME, "imgg", target = "search result",log_callback=log_callback)
-        if searchresults is None:
+                log_callback(f"Search for {OGfile} timed out.\n")
+            else:
+                print(f"Search for {OGfile} timed out.\n")
+            return None
+    
+    try:
+        checkresults = driver.find_elements(By.XPATH, "/html/body/div[1]/div/div[1]/main/div/div/div")[0].get_attribute("innerHTML")
+        if "nothing good matched." in checkresults:
             if log_callback:
-                log_callback("No search results found for " + eachAV + "\n")
-            continue
-        
-        current_url = driver.current_url
+                log_callback(f"JavGuru: No search results found for {OGfile}.\n")
+            else:
+                print(f"JavGuru: No search results found for {OGfile}.\n")
+            return None
+    except:
+        pass
+
+    wait = ut.waitVisible(driver, By.CLASS_NAME, "imgg", log_callback=log_callback)
+    if not wait:
+        if log_callback:
+            log_callback(f"Search for {OGfile} timed out.\n")
+        else:
+            print(f"Search for {OGfile} timed out.\n")
+        return None
+
+    searchresults = ut.retry_find_element(driver, By.CLASS_NAME, "imgg", target = "search result",log_callback=log_callback)
+    if searchresults is None:
+        if log_callback:
+            log_callback("No search results found for " + OGfile + "\n")
+        else:
+            print("No search results found for " + OGfile + "\n")
+        return None
+    
+    first_result = ut.retry_find_element(driver, By.XPATH, '//*[@id="main"]/div[1]/div/div/div[2]/h2/a', target="first result", log_callback=log_callback).text
+    temp = first_result.replace('-', '').lower()
+    nodashbanngo = banngo.replace('-', '').lower()
+    if nodashbanngo not in temp:
+        if log_callback:
+            log_callback(f"Search result {first_result} does not match {banngo}\n")
+        else:
+            print(f"Search result {first_result} does not match {banngo}\n")
+        return None
+
+    current_url = driver.current_url
+    driver.execute_script("arguments[0].scrollIntoView();", searchresults)
+    ut.retry_click(driver, By.CLASS_NAME, "imgg", log_callback=log_callback)
+    wait = ut.waitURLChange(driver, current_url, log_callback=log_callback)
+    if not wait:
         driver.execute_script("arguments[0].scrollIntoView();", searchresults)
         ut.retry_click(driver, By.CLASS_NAME, "imgg", log_callback=log_callback)
         wait = ut.waitURLChange(driver, current_url, log_callback=log_callback)
         if not wait:
-            driver.execute_script("arguments[0].scrollIntoView();", searchresults)
-            ut.retry_click(driver, By.CLASS_NAME, "imgg", log_callback=log_callback)
-            wait = ut.waitURLChange(driver, current_url, log_callback=log_callback)
-            if not wait:
-                if log_callback:
-                    log_callback(f"Failed to click on search result for {eachAV}\n")
-                continue
+            if log_callback:
+                log_callback(f"Failed to click on search result for {OGfile}\n")
+            else:
+                print(f"Failed to click on search result for {OGfile}\n")
+            return None
 
-        wait = ut.waitVisible(driver, By.CLASS_NAME, "titl", log_callback=log_callback)
+    wait = ut.waitVisible(driver, By.CLASS_NAME, "titl", log_callback=log_callback)
+    if not wait:
+        if log_callback:
+            log_callback(f"Failed to open page for {banngo}\n")
+        else:
+            print(f"Failed to open page for {banngo}\n")
+        return None
+
+    if log_callback:
+        log_callback("getting metadata on " + banngo + "\n")
+    else:
+        print("getting metadata on " + banngo + "\n")
+
+    title = ut.retry_find_element(driver, By.CLASS_NAME, "titl", target= "title", log_callback=log_callback)
+    metadata = ut.retry_find_element(driver, By.CLASS_NAME, "infoleft", target="metadata", log_callback=log_callback)
+    cover = ut.retry_find_element(driver, By.CLASS_NAME, "large-screenimg", target="cover", log_callback=log_callback)
+    img_element = cover.find_element(By.TAG_NAME, "img")
+    img_src = img_element.get_attribute('src')
+
+    info = {
+        "title": title.text,
+        "metadata": metadata.text,
+        "cover": img_src,
+        "OGfilename": OGfile
+    }
+
+    data = parseInfoJavguru(info, log_callback=log_callback)
+
+    cached_NFO[banngo] = data
+
+    return data
+
+def processSearchJavtrailers(driver, banngo, OGfile, cached_NFO, log_callback=None):
+    if log_callback:
+        log_callback(f"Searching for: {OGfile} on javtrailers\n")
+    else:
+        print(f"Searching for: {OGfile} on javtrailers\n")
+    
+    if banngo in cached_NFO:
+        if log_callback:
+            log_callback(f"{OGfile} in cache.\n")
+        else:
+            print(f"{OGfile} in cache.\n")
+        return cached_NFO[banngo]
+    
+    wait = ut.waitVisible(driver, By.ID, "searchBox", log_callback=log_callback)
+    if not wait:
+        if log_callback:
+            log_callback(f"Search for {OGfile} timed out.\n")
+        else:
+            print(f"Search for {OGfile} timed out.\n")
+        return None
+    
+    searchField = ut.retry_find_element(driver, By.ID, "searchBox", target= "search field",log_callback=log_callback)
+    current_url = driver.current_url
+    driver.execute_script("arguments[0].scrollIntoView();", searchField)
+    ut.retry_clear(driver, By.ID, "searchBox", log_callback=log_callback)
+    ut.retry_send_keys(driver, By.ID, "searchBox", banngo, log_callback=log_callback)
+    wait = ut.waitURLChange(driver, current_url, log_callback=log_callback)
+    if not wait:
+        ut.retry_clear(driver, By.ID, "searchBox", log_callback=log_callback)
+        ut.retry_send_keys(driver, By.ID, "searchBox", banngo, log_callback=log_callback)
+        wait = ut.waitURLChange(driver, current_url, log_callback=log_callback)
         if not wait:
             if log_callback:
-                log_callback(f"Failed to open page for {eachAV}\n")
-            continue
-
-        if log_callback:
-            log_callback("getting metadata on " + eachAV + "\n")
-
-        title = ut.retry_find_element(driver, By.CLASS_NAME, "titl", target= "title", log_callback=log_callback)
-        metadata = ut.retry_find_element(driver, By.CLASS_NAME, "infoleft", target="metadata", log_callback=log_callback)
-        cover = ut.retry_find_element(driver, By.CLASS_NAME, "large-screenimg", target="cover", log_callback=log_callback)
-        img_element = cover.find_element(By.TAG_NAME, "img")
-        img_src = img_element.get_attribute('src')
-
-        info = {
-            "title": title.text,
-            "metadata": metadata.text,
-            "cover": img_src,
-            "OGfilename": fileList[eachAV]
-        }
-
-        infoList.append(info)
-        cached_NFO[eachAV] = info
+                log_callback(f"Search for {OGfile} timed out.\n")
+            else:
+                print(f"Search for {OGfile} timed out.\n")
+            return None
         
-    driver.quit()
-    return infoList
+    wait = ut.waitVisible(driver, By.XPATH, '//*[@id="search"]', log_callback=log_callback)
+    if not wait:
+        if log_callback:
+            log_callback(f"Search for {OGfile} timed out.\n")
+        else:
+            print(f"Search for {OGfile} timed out.\n")
+        return None
+    
+    searchresults = ut.retry_find_element(driver, By.XPATH, '//*[@id="search"]', target = "search result",log_callback=log_callback)
+    if searchresults is None:
+        if log_callback:
+            log_callback("No search results found for " + OGfile + "\n")
+        else:
+            print("No search results found for " + OGfile + "\n")
+        return None
+    
+    try:
+        driver.refresh()
+        checkresults = None
+        checkresults = driver.find_elements(By.XPATH, '//*[@id="search"]')[0].get_attribute("innerHTML")
+        if "No videos available" in checkresults:
+            if log_callback:
+                log_callback(f"JavTrailers: No search results found for {OGfile}.\n")
+            else:
+                print(f"JavTrailers: No search results found for {OGfile}.\n")
+            return None
+    except:
+        pass
+
+    first_result = ut.retry_find_element(driver, By.XPATH, '//*[@id="search"]/div/section/div/div[1]/div/a/div/div[2]/div/p', target="first result", log_callback=log_callback)
+    text = first_result.text.replace('-', '').lower()
+    temp = banngo.replace('-', '').lower()
+    if temp not in text:
+        if log_callback:
+            log_callback(f"Search result {text} does not match {banngo}\n")
+        else:
+            print(f"Search result {text} does not match {banngo}\n")
+        return None
+
+    current_url = driver.current_url
+    driver.execute_script("arguments[0].scrollIntoView();", first_result)
+    ut.retry_click(driver, By.XPATH, "/html/body/div[1]/div/div[2]/section/div/section/div/div[1]/div/a/div/div[2]/div/p", log_callback=log_callback)
+    wait = ut.waitURLChange(driver, current_url, log_callback=log_callback)
+    if not wait:
+        driver.execute_script("arguments[0].scrollIntoView();", first_result)
+        ut.retry_click(driver, By.XPATH, "/html/body/div[1]/div/div[2]/section/div/section/div/div[1]/div/a/div/div[2]/div/p", log_callback=log_callback)
+        wait = ut.waitURLChange(driver, current_url, log_callback=log_callback)
+        if not wait:
+            if log_callback:
+                log_callback(f"Failed to click on search result for {OGfile}\n")
+            else:
+                print(f"Failed to click on search result for {OGfile}\n")
+            return None
+    
+    wait = ut.waitVisible(driver, By.XPATH, "/html/body/div[1]/div/div[2]/section/div/div/div[1]/div[3]", log_callback=log_callback)
+    if not wait:
+        if log_callback:
+            log_callback(f"Failed to open page for {banngo}\n")
+        else:
+            print(f"Failed to open page for {banngo}\n")
+        return None
+    
+    if log_callback:
+        log_callback("getting metadata on " + banngo + "\n")
+    else:
+        print("getting metadata on " + banngo + "\n")
+
+    title = ut.retry_find_element(driver, By.XPATH, "/html/body/div[1]/div/div[2]/section/div/div/div[1]/div[3]/h1", target= "title", log_callback=log_callback)
+    metadatas = ut.retry_find_element(driver, By.XPATH, "/html/body/div[1]/div/div[2]/section/div/div/div[1]/div[3]/div[1]",target = 'metadata', log_callback=log_callback)
+    cover = ut.retry_find_element(driver, By.XPATH, "/html/body/div[1]/div/div[2]/section/div/div/div[1]/div[3]/div[2]/img", target="cover", log_callback=log_callback)
+    img_src = cover.get_attribute('data-src')
+
+    info = {
+        "title": title.text if title else "Unknown",
+        "metadata": metadatas.get_attribute('innerHTML'),
+        "cover": img_src,
+        "OGfilename": OGfile
+    }
+
+    data = parseInfoJavtrailers(info, log_callback=log_callback)
+
+    cached_NFO[banngo] = data
+
+    return data
+
 
 
 def createNFO(path, metadata, log_callback=None):
     if log_callback:
         log_callback("Creating NFO for " + metadata['Code'] + "\n")
+    else:
+        print("Creating NFO for " + metadata['Code'] + "\n")
 
     path = os.path.join(path, "movie.nfo") 
     with open(path, 'w+', encoding = 'utf-8') as f:
@@ -146,6 +298,8 @@ def findAVIn(directory, log_callback=None, update_callback=None):
     ]
     if log_callback:
         log_callback(f"Scanning directory: {directory}\n")
+    else:
+        print(f"Scanning directory: {directory}\n")
     file_list = os.listdir(directory)
     pattern = re.compile(r'([a-zA-Z]+\d*?-\d+[a-zA-Z]?)')
     pending_BanngoList = []
@@ -160,17 +314,22 @@ def findAVIn(directory, log_callback=None, update_callback=None):
                 pending_fileList[banngo] = file
                 if log_callback:
                     log_callback("Found " + banngo + "\n")
+                else:
+                    print("Found " + banngo + "\n")
                 if update_callback:
                     update_callback(file, "")
             else:
                 if log_callback:
                     log_callback(f"skipped {file}\n")
+                else:
+                    print(f"skipped {file}\n")
     return pending_BanngoList, pending_fileList
-
 
 def downloadImage(banngo, url, path, log_callback=None):
     if log_callback:
         log_callback("Downloading image for " + banngo + "\n")
+    else:
+        print("Downloading image for " + banngo + "\n")
     try:
         response = requests.get(url)
         path = path + '/folder.jpg'
@@ -179,8 +338,7 @@ def downloadImage(banngo, url, path, log_callback=None):
     except:
         pass
 
-
-def parseInfo(info, log_callback=None):
+def parseInfoJavguru(info, log_callback=None):
     pattern = re.compile(r'\[([a-zA-Z]+\d*?-\d+[a-zA-Z]?)\]')
     title = re.sub(pattern, '', info['title']).strip()
     metadata = info['metadata']
@@ -213,9 +371,68 @@ def parseInfo(info, log_callback=None):
 
     return movie_info
 
+def parseInfoJavtrailers(info, log_callback=None):
+    html = info['metadata']
+    pattern = re.compile(r'\[([a-zA-Z]+\d*?-\d+[a-zA-Z]?)\]')
+    title = re.sub(pattern, '', info['title']).strip()
+    cover = info['cover']
+    OGfilename = info['OGfilename']
+    DID_id = re.search(r'DVD ID:</span>\s*(.*?)\s*</p>', html)
+    date = re.search(r'Release Date:</span>\s*(.*?)</p>', html)
+    studio = re.search(r'/studios/.*?" class="badge bg-light text-dark mr-2 badge-link">(.*?)</a>', html)
+    tags = re.findall(r'/categories/.*?" class="badge bg-light text-dark badge-link">(.*?)</a>', html)
+    actress = re.findall(r'/casts/.*?" class="badge bg-light text-dark mr-2 badge-link">(.*?)</a>', html)
+    
+    if date:
+        date = datetime.strptime(date.group(1), '%d %b %Y').strftime('%Y-%m-%d')
+    else:
+        date = "Unknown"
+
+    if actress:
+        for each in actress:
+            actress = [re.sub(r'[^\x00-\x7F]+', '', act) for act in actress]
+    else:
+        actress = ["Unknown"]
+
+    if DID_id:
+        DID_id = DID_id.group(1)
+    else:
+        DID_id = "Unknown"
+
+    if studio:
+        studio = studio.group(1)
+    else:
+        studio = "Unknown"
+    
+    if not tags:
+        tags = [""]
+
+    movie_info = {}
+    movie_info['Title'] = title
+    movie_info['Image'] = cover
+    movie_info['OGfilename'] = OGfilename
+    movie_info['Code'] = DID_id
+    movie_info['Release Date'] = date
+    movie_info['Studio'] = studio
+    movie_info['Tags'] = tags
+    movie_info['Actress'] = actress
+    movie_info['Label'] = studio
+
+    return movie_info
+
+
+
+
+
+
+
+
+
 def manageFileStucture(dir, metadata, log_callback=None, update_callback=None):
     if log_callback:
         log_callback("Creating folder for " + metadata['Code'] + "\n")
+    else:
+        print("Creating folder for " + metadata['Code'] + "\n")
 
     folder_name = metadata["Code"] + ' [' + metadata['Studio'] + '] - ' + metadata['Title'] + ' (' + metadata['Release Date'].split('-')[0] + ')'
     if (len(folder_name) > 200):

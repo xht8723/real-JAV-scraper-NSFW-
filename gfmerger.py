@@ -11,34 +11,38 @@ def processSearch(driver, name, cached_names, log_callback=None):
     if not wait:
         raise(Exception("Search button not found. Please check connection.1"))
     
-    log_callback("Searching for: " + name + "\n")
+    if log_callback:
+        log_callback("Searching for: " + name + "\n")
+    else:
+        print("Searching for: " + name + "\n")
+
     searchbtn = ut.retry_find_element(driver, By.XPATH, "/html/body/nav[1]/div/button[2]",target="search button", log_callback = log_callback)
     if searchbtn == None:
         raise(Exception("Search button not found. Please check connection.2"))
     
     driver.execute_script("arguments[0].scrollIntoView();", searchbtn)
     ut.retry_click(driver, By.XPATH, "/html/body/nav[1]/div/button[2]")
-    wait = ut.waitVisible(driver, By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", log_callback=log_callback)
+    wait = ut.waitVisible(driver, By.XPATH, '//*[@id="flq_popup_search"]/div/div[1]/div/div/form/input', log_callback=log_callback)
     if not wait:
         driver.execute_script("arguments[0].scrollIntoView();", searchbtn)
         ut.retry_click(driver, By.XPATH, "/html/body/nav[1]/div/button[2]")
-        wait = ut.waitVisible(driver, By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", log_callback=log_callback)
+        wait = ut.waitVisible(driver, By.XPATH, '//*[@id="flq_popup_search"]/div/div[1]/div/div/form/input', log_callback=log_callback)
         if not wait:
             raise(Exception("Search field not found. Please check connection.3"))
     
-    searchField = ut.retry_find_element(driver, By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", target="search field", log_callback=log_callback)
+    searchField = ut.retry_find_element(driver, By.XPATH, '//*[@id="flq_popup_search"]/div/div[1]/div/div/form/input', target="search field", log_callback=log_callback)
     if searchField == None:
         raise(Exception("Search field not found. Please check connection.4"))
     
     currentURL = driver.current_url
     driver.execute_script("arguments[0].scrollIntoView();", searchField)
-    ut.retry_clear(searchField,By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", log_callback=log_callback)
-    ut.retry_send_keys(driver, By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", name, log_callback=log_callback)
+    ut.retry_clear(searchField,By.XPATH, '//*[@id="flq_popup_search"]/div/div[1]/div/div/form/input', log_callback=log_callback)
+    ut.retry_send_keys(driver, By.XPATH, '//*[@id="flq_popup_search"]/div/div[1]/div/div/form/input', name, log_callback=log_callback)
     wait = ut.waitURLChange(driver, currentURL, log_callback=log_callback)
     if not wait:
         driver.execute_script("arguments[0].scrollIntoView();", searchField)
-        ut.retry_clear(searchField,By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", log_callback=log_callback)
-        ut.retry_send_keys(driver, By.XPATH, "/html/body/div[10]/div[2]/div[4]/div/div/div/div[1]/div/div/form/input", name, log_callback=log_callback)
+        ut.retry_clear(searchField,By.XPATH, '//*[@id="flq_popup_search"]/div/div[1]/div/div/form/input', log_callback=log_callback)
+        ut.retry_send_keys(driver, By.XPATH, '//*[@id="flq_popup_search"]/div/div[1]/div/div/form/input', name, log_callback=log_callback)
         wait = ut.waitURLChange(driver, currentURL, log_callback=log_callback)
         if not wait:
             raise(Exception("Search failed. Please check connection.5"))
@@ -46,6 +50,8 @@ def processSearch(driver, name, cached_names, log_callback=None):
     if not wait:
         if log_callback:
             log_callback("Seaching for " + name + " timed out1\n")
+        else:
+            print("Seaching for " + name + " timed out1\n")
         return None
     
     try:
@@ -53,6 +59,8 @@ def processSearch(driver, name, cached_names, log_callback=None):
         if "Result Not Found" in checkresult:
             if log_callback:
                 log_callback("No result found for " + name + "\n")
+            else:
+                print("No result found for " + name + "\n")
             return None
     except:
         pass
@@ -61,6 +69,8 @@ def processSearch(driver, name, cached_names, log_callback=None):
     if result == None:
         if log_callback:
             log_callback("Seaching for " + name + " timed out2\n")
+        else:
+            print("Seaching for " + name + " timed out2\n")
         return None
     
     currentURL = driver.current_url
@@ -74,6 +84,8 @@ def processSearch(driver, name, cached_names, log_callback=None):
         if not wait:
             if log_callback:
                 log_callback("Seaching for " + name + " timed out3\n")
+            else:
+                print("Seaching for " + name + " timed out3\n")
             return None
 
     if "hd" in driver.current_url:
@@ -81,6 +93,8 @@ def processSearch(driver, name, cached_names, log_callback=None):
         if not wait:
             if log_callback:
                 log_callback("Seaching for " + name + " timed out4\n")
+            else:
+                print("Seaching for " + name + " timed out4\n")
             return None
         starring = ut.retry_find_element(driver, By.XPATH, "/html/body/div[4]/div/div/div[2]/div[1]/div/div/table/tbody/tr[1]/td[2]/div/ul/li/a", target= "starring", log_callback=log_callback)
         if starring == None:
@@ -96,12 +110,16 @@ def processSearch(driver, name, cached_names, log_callback=None):
             if not wait:
                 if log_callback:
                     log_callback("Seaching for " + name + " timed out5\n")
+                else:
+                    print("Seaching for " + name + " timed out5\n")
                 return None
 
     wait = ut.waitVisible(driver, By.XPATH, "/html/body/div[3]/div[3]/div/div[2]", log_callback=log_callback)
     if not wait:
         if log_callback:
             log_callback("Seaching for " + name + " timed out6\n")
+        else:
+            print("Seaching for " + name + " timed out6\n")
         return None
     
     card = ut.retry_find_element(driver, By.XPATH, "/html/body/div[3]/div[3]/div/div[2]", target= "card", log_callback=log_callback)
@@ -113,9 +131,90 @@ def processSearch(driver, name, cached_names, log_callback=None):
     if name.lower() not in [n.lower() for n in names]:
         if log_callback:
             log_callback(f"Name {name} not found in search results\n")
+        else:
+            print(f"Name {name} not found in search results\n")
         return None
     cached_names[name] = names
     return names
+
+def processSearchJavguru(driver, name, cached_names, log_callback=None):
+    if name in cached_names:
+        return cached_names[name]
+    
+    wait = ut.waitVisible(driver, By.XPATH, '//*[@id="main"]/div[1]/div[2]/form/input', log_callback=log_callback)
+    if not wait:
+        raise(Exception("Search field not found. Please check connection.1"))
+    
+    if log_callback:
+        log_callback("Searching for: " + name + "\n")
+    else:
+        print("Searching for: " + name + "\n")
+
+    searchField = ut.retry_find_element(driver, By.XPATH, '//*[@id="main"]/div[1]/div[2]/form/input', target="search field", log_callback=log_callback)
+    if searchField == None:
+        raise(Exception("Search field not found. Please check connection.2"))
+    
+    currentURL = driver.current_url
+    driver.execute_script("arguments[0].scrollIntoView();", searchField)
+    driver.execute_script("arguments[0].scrollIntoView();", searchField)
+    ut.retry_clear(searchField, By.XPATH, '//*[@id="main"]/div[1]/div[2]/form/input', log_callback=log_callback)
+    ut.retry_send_keys(driver, By.XPATH, '//*[@id="main"]/div[1]/div[2]/form/input', name, log_callback=log_callback)
+    wait = ut.waitURLChange(driver, currentURL, log_callback=log_callback)
+    if not wait:
+        driver.execute_script("arguments[0].scrollIntoView();", searchField)
+        driver.execute_script("arguments[0].scrollIntoView();", searchField)
+        ut.retry_clear(searchField, By.XPATH, '//*[@id="main"]/div[1]/div[2]/form/input', log_callback=log_callback)
+        ut.retry_send_keys(driver, By.XPATH, '//*[@id="main"]/div[1]/div[2]/form/input', name, log_callback=log_callback)
+        wait = ut.waitURLChange(driver, currentURL, log_callback=log_callback)
+        if not wait:
+            raise(Exception("Search failed. Please check connection.3"))
+    
+    wait = ut.waitVisible(driver, By.XPATH, '//*[@id="main"]/div[2]', log_callback=log_callback)
+    if not wait:
+        if log_callback:
+            log_callback("Seaching for " + name + " timed out1\n")
+        else:
+            print("Seaching for " + name + " timed out1\n")
+        return None
+    
+    checkresult = driver.find_elements(By.XPATH, '//*[@id="main"]/div[2]')[0].get_attribute("innerHTML")
+    if "No results found" in checkresult:
+        if log_callback:
+            log_callback("No result found for " + name + "\n")
+        else:
+            print("No result found for " + name + "\n")
+        return None
+    
+    enName = ut.retry_find_element(driver, By.XPATH, '//*[@id="main"]/div[2]/div/a/div/div[2]/span[1]', target="enName", log_callback=log_callback)
+    if enName == None:
+        if log_callback:
+            log_callback("Seaching for " + name + " timed out2\n")
+        else:
+            print("Seaching for " + name + " timed out2\n")
+        return None
+    
+    jpName = ut.retry_find_element(driver, By.XPATH, '//*[@id="main"]/div[2]/div/a/div/div[2]/span[3]', target="jpName", log_callback=log_callback)
+    if jpName == None:
+        if log_callback:
+            log_callback("Seaching for " + name + " timed out3\n")
+        else:
+            print("Seaching for " + name + " timed out3\n")
+        return None
+
+    enName = enName.text
+    enNameR = enName.split(" ")
+    enNameR = ' '.join(enNameR[::-1])
+    jpName = jpName.text
+    if name.lower() not in [enName.lower(), jpName.lower(), enNameR.lower()]:
+        if log_callback:
+            log_callback(f"Name {name} not found in search results\n")
+        else: 
+            print(f"Name {name} not found in search results\n")
+        return None
+    
+    cached_names[name] = [enName, jpName, enNameR]
+    return [enName, jpName, enNameR]
+
 
 def processCardInfo(card, log_callback=None):
     names = []
@@ -136,6 +235,8 @@ def processCardInfo(card, log_callback=None):
             names.append(name)
     if log_callback != None:
         log_callback(f"Found names: {names}\n")
+    else:
+        print(f"Found names: {names}\n")
     names = list(set(names)) 
     return names
     
@@ -166,13 +267,17 @@ def searchNFO(dir, toDir=None, log_callback=None, update_callback=None):
                         if log_callback != None:
                             loc = os.path.join(root, file)
                             log_callback(f"No actor name found in {loc}\n", "orange")
+                        else:
+                            loc = os.path.join(root, file)
+                            print(f"No actor name found in {loc}\n")
                 if toDir != None:
                     pass
     if log_callback != None:                
         log_callback(f"Found actors number: {len(actors)}\n")
+    else:
+        print(f"Found actors number: {len(actors)}\n")
     return actors
         
-
 def modifyNFO(actors, actor, names, toDir=None, log_callback=None, update_callback=None):
     primaryName = decidePrimaryName(names)
     for file in actors[actor]:
@@ -215,6 +320,8 @@ def modifyNFO(actors, actor, names, toDir=None, log_callback=None, update_callba
                 f.write(data)
         if log_callback != None:
             log_callback(f"Modified actress info for {file}\n")
+        else:
+            print(f"Modified actress info for {file}\n")
         if update_callback != None:
             nameString = ''
             for name in names:
@@ -233,3 +340,4 @@ def decidePrimaryName(names):
         if any_han.search(name):
             return name
     return names[0] if names else None
+

@@ -82,30 +82,51 @@ class MainWindow(QMainWindow):
             self.table_update_signal.update.emit(original_filename, new_folder_name)
 
         cached_NFO = ut.readJson("NFO.json")
-
+        missing = []
         try:
-            driver = ut.startFirefox("https://jav.guru/", log_callback=log_callback, isheadless=isheadless)
             banngoTuple = scraper.findAVIn(directory, log_callback=log_callback, update_callback=update_table)
-            metadataList = scraper.processSearch(driver, banngoTuple, cached_NFO, log_callback=log_callback)
-
-            for metadata in metadataList:
-                data = scraper.parseInfo(metadata, log_callback=log_callback)
+            driver = ut.startFirefox("https://jav.guru/", log_callback=log_callback, isheadless=isheadless)
+            for eachBanngo in banngoTuple[0]:
+                ogfile = banngoTuple[1][eachBanngo]
+                data = scraper.processSearchJavguru(driver, eachBanngo, ogfile, cached_NFO, log_callback=log_callback)
+                if data == None:
+                    missing.append(eachBanngo)
+                    log_callback(f"Failed to get search results for {eachBanngo}\n", "orange")
+                    continue
                 try:
                     scraper.manageFileStucture(directory, data, log_callback=log_callback, update_callback=update_table)
                     log_callback(f"Processed: {data['Code']}\n")
                 except Exception as e:
                     log_callback(f"Error: {str(e)} occurred while processing {data['Title']}\n")
-            
-            log_callback("\nFinished processing all files!\n", "green")
+
             ut.writeJson(cached_NFO, "NFO.json")
-            self.ui.startBt.setEnabled(True)
-            driver.quit()
         except Exception as e:
             log_callback(f"Error: {str(e)}\n", "red")
-        finally:
-            driver.quit()
-            ut.writeJson(cached_NFO, "NFO.json")
-            self.ui.startBt.setEnabled(True)
+
+        try:
+            if len(missing) > 0:
+                cached_NFO = ut.readJson("NFO.json")
+                ut.gotoURL(driver, "https://javtrailers.com/")
+                for eachBanngo in missing:
+                    ogfile = banngoTuple[1][eachBanngo]
+                    data = scraper.processSearchJavtrailers(driver, eachBanngo, ogfile, cached_NFO, log_callback=log_callback)
+                    if data == None:
+                        log_callback(f"Failed to get search results for {eachBanngo}\n", "orange")
+                        continue
+                    try:
+                        scraper.manageFileStucture(directory, data, log_callback=log_callback, update_callback=update_table)
+                        log_callback(f"Processed: {data['Code']}\n")
+                    except Exception as e:
+                        log_callback(f"Error: {str(e)} occurred while processing {data['Title']}\n")
+
+        except Exception as e:
+            log_callback(f"Error: {str(e)}\n", "red")
+
+        ut.writeJson(cached_NFO, "NFO.json")
+        self.ui.startBt.setEnabled(True)
+        driver.quit()
+        log_callback("\nFinished processing all files!\n", "green")
+
     
     def gfmerger_thread(self, directory, isheadless=False):
         def log_callback(message, color="black"):
@@ -115,28 +136,58 @@ class MainWindow(QMainWindow):
             self.table_update_signal.update.emit(original_filename, new_folder_name)
         
         cached_names = ut.readJson("names.json")
+        missing = []
 
         try:
             Local_actors = gfmerger.searchNFO(directory, log_callback=log_callback, update_callback=update_table)
+            for actor in list(Local_actors.keys()):
+                if actor in cached_names:
+                    gfmerger.modifyNFO(Local_actors, actor, cached_names[actor], log_callback=log_callback, update_callback=update_table)
+                    log_callback(f"Adding multi Names: {cached_names[actor]}\n")
+                    del Local_actors[actor]
+
             driver = ut.startFirefox("https://javmodel.com/",log_callback=log_callback, isheadless=isheadless)
             for actor in Local_actors:
                 names = gfmerger.processSearch(driver, actor, cached_names, log_callback=log_callback)
                 if names == None:
                     log_callback(f"Failed to get search results for {actor}\n", "orange")
+                    missing.append(actor)
                     continue
                 gfmerger.modifyNFO(Local_actors, actor, names, log_callback=log_callback, update_callback=update_table)
                 log_callback(f"Adding multi Names: {names}\n")
-            log_callback("\nFinished modifying names!\n", "green")
+
+
+            cached_names = ut.formatnameJson(cached_names)
             ut.writeJson(cached_names, "names.json")
-            self.ui.actressSearch.setEnabled(True)
-            driver.quit()
+
         except Exception as e:
-            log_callback(f"Error: {str(e)}\n", "red")
-        finally:
-            driver.quit()
+            cached_names = ut.formatnameJson(cached_names)
             ut.writeJson(cached_names, "names.json")
-            self.ui.actressSearch.setEnabled(True)
-            
+            log_callback(f"Error: {str(e)}\n", "red")
+
+        try:
+            if len(missing) > 0:
+                ut.gotoURL(driver, "https://jav.guru/jav-actress-list/")
+                cached_names = ut.readJson("names.json")
+                for actor in missing:
+                    names = gfmerger.processSearchJavguru(driver, actor, cached_names, log_callback=log_callback)
+                    if names == None:
+                        log_callback(f"Failed to get search results for {actor}\n", "orange")
+                        continue
+                    gfmerger.modifyNFO(Local_actors, actor, names, log_callback=log_callback, update_callback=update_table)
+                    log_callback(f"Adding multi Names: {names}\n")
+                cached_names = ut.formatnameJson(cached_names)
+                ut.writeJson(cached_names, "names.json")
+
+        except Exception as e:
+            cached_names = ut.formatnameJson(cached_names)
+            ut.writeJson(cached_names, "names.json")
+            log_callback(f"Error: {str(e)}\n", "red")
+
+        self.ui.actressSearch.setEnabled(True)
+        driver.quit()
+        log_callback("\nFinished modifying names!\n", "green")
+
     def update_logs(self, message, color = "black"):
         if color != "black":
             message = f'<span style="color:{color};">{message}</span>'
@@ -152,7 +203,6 @@ class MainWindow(QMainWindow):
             row = self.table_model.rowCount()
             self.table_model.insertRow(row)
             self.table_model.setItem(row, 0, QStandardItem(original_filename))
-        self.ui.processList.scrollToBottom()
 
 def resource_path(relative_path):
     try:

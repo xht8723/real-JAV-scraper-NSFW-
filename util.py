@@ -115,6 +115,13 @@ def startFirefox(url, log_callback=None, isheadless=False):
         waitDomReady(driver, log_callback=log_callback)
     return driver
 
+def gotoURL(driver, url, log_callback=None):
+    if log_callback:
+        log_callback(f"Going to: {url}\n")
+    driver.get(url)
+    waitDomReady(driver, log_callback=log_callback)
+    return True
+
 def readJson(filename):
     try:
         with open(filename, "r", encoding='utf-8') as f:
@@ -125,3 +132,10 @@ def readJson(filename):
 def writeJson(data, filename):
     with open(filename, "w", encoding='utf-8') as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
+
+def formatnameJson(data):
+    for name, aliases in list(data.items()):
+        for alias in aliases:
+            if alias not in data:
+                data[alias] = aliases
+    return data
