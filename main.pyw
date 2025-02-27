@@ -138,7 +138,6 @@ class MainWindow(QMainWindow):
 # Run gfmerger thread once button pressed.
 # Scapes javmodel and then javguru to format actress names under same language.
 #-----------------------------------------------------
-    
     def gfmerger_thread(self, directory, isheadless=False):
         def log_callback(message, color="black"):
             self.log_signal.update.emit(message, color)
@@ -156,7 +155,10 @@ class MainWindow(QMainWindow):
                     gfmerger.modifyNFO(Local_actors, actor, cached_names[actor], log_callback=log_callback, update_callback=update_table)
                     log_callback(f"Adding multi Names: {cached_names[actor]}\n")
                     del Local_actors[actor]
+        except Exception as e:
+            log_callback(f"Error: {str(e)}\n", "red")
 
+        try:
             driver = ut.startFirefox("https://javmodel.com/",log_callback=log_callback, isheadless=isheadless)
             for actor in Local_actors:
                 names = gfmerger.processSearch(driver, actor, cached_names, log_callback=log_callback)
@@ -166,7 +168,6 @@ class MainWindow(QMainWindow):
                     continue
                 gfmerger.modifyNFO(Local_actors, actor, names, log_callback=log_callback, update_callback=update_table)
                 log_callback(f"Adding multi Names: {names}\n")
-
 
             cached_names = ut.formatnameJson(cached_names)
             ut.writeJson(cached_names, "names.json")
@@ -194,9 +195,8 @@ class MainWindow(QMainWindow):
             cached_names = ut.formatnameJson(cached_names)
             ut.writeJson(cached_names, "names.json")
             log_callback(f"Error: {str(e)}\n", "red")
-
-        self.ui.actressSearch.setEnabled(True)
         driver.quit()
+        self.ui.actressSearch.setEnabled(True)
         log_callback("\nFinished modifying names!\n", "green")
 
     def update_logs(self, message, color = "black"):

@@ -782,7 +782,9 @@
     "Fuyue Kotone": [
         "Fuyue Kotone",
         "冬愛ことね",
-        "Kotone Fuyue"
+        "Kotone Fuyue",
+        "Toua Kotone",
+        "Kotone Toua"
     ],
     "Shiraishi Momo": [
         "Shiraishi Momo",
@@ -1157,12 +1159,16 @@
     "冬愛ことね": [
         "Fuyue Kotone",
         "冬愛ことね",
-        "Kotone Fuyue"
+        "Kotone Fuyue",
+        "Toua Kotone",
+        "Kotone Toua"
     ],
     "Kotone Fuyue": [
         "Fuyue Kotone",
         "冬愛ことね",
-        "Kotone Fuyue"
+        "Kotone Fuyue",
+        "Toua Kotone",
+        "Kotone Toua"
     ],
     "白石もも": [
         "Shiraishi Momo",
@@ -16442,5 +16448,158 @@
         "Kanade Jiyuu",
         "かなで自由",
         "Jiyuu Kanade"
+    ],
+    "Yuki Yoshizawa": [
+        "Yoshizawa Yuki",
+        "Yuki Yoshizawa",
+        "吉澤友貴"
+    ],
+    "Riria Hyodo": [
+        "Hyodo Riria",
+        "冰堂梨梨",
+        "Riria Hyodo",
+        "氷堂りりあ"
+    ],
+    "Aika Yumeno": [
+        "夢乃愛華",
+        "Aika Yumeno",
+        "Yumeno Aika",
+        "夢乃あいか"
+    ],
+    "Miru Sakamichi": [
+        "Sakamichi Miru",
+        "坂道美琉",
+        "坂道みる",
+        "Miru Sakamichi"
+    ],
+    "Marin Hinata": [
+        "日向真凜",
+        "Hinata Marin",
+        "ひなたまりん",
+        "Marin Hinata"
+    ],
+    "Rina Takase": [
+        "Rina Takase",
+        "高瀬りな",
+        "Takase Rina",
+        "高瀨里奈"
+    ],
+    "Kotone Toua": [
+        "Toua Kotone",
+        "冬愛琴音",
+        "冬愛ことね",
+        "Kotone Toua",
+        "Fuyue Kotone",
+        "Kotone Fuyue"
+    ],
+    "Yoshizawa Yuki": [
+        "Yoshizawa Yuki",
+        "Yuki Yoshizawa",
+        "吉澤友貴"
+    ],
+    "吉澤友貴": [
+        "Yoshizawa Yuki",
+        "Yuki Yoshizawa",
+        "吉澤友貴"
+    ],
+    "Hyodo Riria": [
+        "Hyodo Riria",
+        "冰堂梨梨",
+        "Riria Hyodo",
+        "氷堂りりあ"
+    ],
+    "冰堂梨梨": [
+        "Hyodo Riria",
+        "冰堂梨梨",
+        "Riria Hyodo",
+        "氷堂りりあ"
+    ],
+    "夢乃愛華": [
+        "夢乃愛華",
+        "Aika Yumeno",
+        "Yumeno Aika",
+        "夢乃あいか"
+    ],
+    "Yumeno Aika": [
+        "夢乃愛華",
+        "Aika Yumeno",
+        "Yumeno Aika",
+        "夢乃あいか"
+    ],
+    "夢乃あいか": [
+        "夢乃愛華",
+        "Aika Yumeno",
+        "Yumeno Aika",
+        "夢乃あいか"
+    ],
+    "Sakamichi Miru": [
+        "Sakamichi Miru",
+        "坂道美琉",
+        "坂道みる",
+        "Miru Sakamichi"
+    ],
+    "坂道美琉": [
+        "Sakamichi Miru",
+        "坂道美琉",
+        "坂道みる",
+        "Miru Sakamichi"
+    ],
+    "坂道みる": [
+        "Sakamichi Miru",
+        "坂道美琉",
+        "坂道みる",
+        "Miru Sakamichi"
+    ],
+    "日向真凜": [
+        "日向真凜",
+        "Hinata Marin",
+        "ひなたまりん",
+        "Marin Hinata"
+    ],
+    "Hinata Marin": [
+        "日向真凜",
+        "Hinata Marin",
+        "ひなたまりん",
+        "Marin Hinata"
+    ],
+    "ひなたまりん": [
+        "日向真凜",
+        "Hinata Marin",
+        "ひなたまりん",
+        "Marin Hinata"
+    ],
+    "高瀬りな": [
+        "Rina Takase",
+        "高瀬りな",
+        "Takase Rina",
+        "高瀨里奈"
+    ],
+    "Takase Rina": [
+        "Rina Takase",
+        "高瀬りな",
+        "Takase Rina",
+        "高瀨里奈"
+    ],
+    "高瀨里奈": [
+        "Rina Takase",
+        "高瀬りな",
+        "Takase Rina",
+        "高瀨里奈"
+    ],
+    "Toua Kotone": [
+        "Toua Kotone",
+        "冬愛琴音",
+        "冬愛ことね",
+        "Kotone Toua",
+        "Fuyue Kotone",
+        "Kotone Fuyue"
+    ],
+    "冬愛琴音": [
+        "Toua Kotone",
+        "冬愛琴音",
+        "冬愛ことね",
+        "Kotone Toua",
+        "Fuyue Kotone",
+        "Kotone Fuyue"
     ]
 }

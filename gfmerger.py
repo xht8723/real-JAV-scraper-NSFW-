@@ -224,7 +224,6 @@ def processSearchJavguru(driver, name, cached_names, log_callback=None):
 #----------------------------------------------
 # process actress names from card info for javmodels
 #----------------------------------------------
-
 def processCardInfo(card, log_callback=None):
     names = []
     match = re.findall(r'"actor">.*?</h1>', card, flags = re.UNICODE)
