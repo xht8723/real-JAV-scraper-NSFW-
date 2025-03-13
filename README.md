@@ -20,6 +20,10 @@ Gather an actress's CN,JP,EN names and nicely organize them in nfo files so that
 
 Pressure tested over 3000+ movies.
 
+Batch rename subtitles.
+
+Batch create hardlinks.
+
 ## Upcoming features
 
 Optional recursive directory search.
