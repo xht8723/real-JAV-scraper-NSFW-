@@ -73,6 +73,8 @@ Format actress name会从javmodel网站搜刮女优的中文日文英文名，�
 
 采用Selenium模拟真实浏览器，从而绕过各自反爬虫限制。
 
+一些小工具，批量重命名字幕文件，批量创建硬链接。
+
 ## 如何安装
 github的release页面会有打包好的exe文件，直接用就好。
 
