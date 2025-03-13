@@ -6,6 +6,8 @@ from PySide6.QtCore import QObject, Signal
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from PySide6.QtGui import QPixmap
 from GUI import Ui_MainWindow
+import rename
+import hardlink
 import scraper
 import gfmerger
 import util as ut
@@ -47,6 +49,16 @@ class MainWindow(QMainWindow):
         self.ui.startBt.clicked.connect(self.run_scraper)
         self.ui.actressSearch.clicked.connect(self.run_gfmerger)
         self.ui.directoryBt.clicked.connect(self.select_directory)
+        self.ui.renameBt.clicked.connect(self.rename_subtitle_UI)
+        self.ui.HDlinkBt.clicked.connect(self.hardlink_UI)
+
+    def rename_subtitle_UI(self):
+        self.rename_window = rename.renameWindow()
+        self.rename_window.show()
+
+    def hardlink_UI(self):
+        self.hardlink_window = hardlink.hardlinkWindow()
+        self.hardlink_window.show()
 
     def select_directory(self):
         directory = QFileDialog.getExistingDirectory(self, "Select Directory")
