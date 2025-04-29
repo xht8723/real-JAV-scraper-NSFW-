@@ -43,7 +43,7 @@ If you want build yourself, all dependencies are in requirements.txt
 
 Only have tested in windows. I have no idea how things go with other OS.
 
-*Install python3 and run ```git install -r requirements.txt```*
+*Install python3 and run ```pip install -r requirements.txt```*
 
 *Download firefox driver "geckodriver.exe" and place in same folder.*
 
