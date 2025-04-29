@@ -39,13 +39,21 @@ There will be .exe binary available in release page.
 ___________________
 
 
-If you want build yourself, all dependencies are in requirements.txt
-
-Only have tested in windows. I have no idea how things go with other OS.
+### Windows
 
 *Install python3 and run ```pip install -r requirements.txt```*
 
 *Download firefox driver "geckodriver.exe" and place in same folder.*
+
+Run main.pyw
+
+### Linux
+
+*Install python3 and run ```pip install -r requirements```*
+
+*Download Firefox driver "geckodriver.exe" and place in the same folder.*
+
+*Install libxcb-cursor0 with ```sudo apt install libxcb-cursor0```
 
 Run main.pyw
 
