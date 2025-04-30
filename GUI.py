@@ -88,6 +88,11 @@ class Ui_MainWindow(object):
         self.isHeadlessCheckbox.setObjectName("isHeadlessCheckbox")
         self.isHeadlessCheckbox.setToolTip("Hide browser window")
         #group_layout.addWidget(self.isHeadlessCheckbox, 1, 0, 1, 2)
+
+        self.folderNameCheckbox = QCheckBox("Use code only as folder name")
+        self.folderNameCheckbox.setObjectName("codeAsFolderNameCheckbox")
+        self.folderNameCheckbox.setToolTip("Rename the folder to only the code of the video")
+        group_layout.addWidget(self.folderNameCheckbox, 4, 0, 1, 2)
         
         self.startBt = QPushButton("Start scrapping")
         self.startBt.setObjectName("startBt")
@@ -119,6 +124,7 @@ class Ui_MainWindow(object):
         self.directoryBt.setText("...")
         self.info.setText("Please consider supporting me!  :D")
         self.isHeadlessCheckbox.setText("Headless Mode")
+        self.folderNameCheckbox.setText("Rename the folder to only the code of the video")
 
 
 class hardlinkWindow(QMainWindow):

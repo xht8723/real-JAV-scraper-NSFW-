@@ -4,6 +4,7 @@ from datetime import date, datetime
 import requests
 from selenium.webdriver.common.by import By
 import util as ut
+from GUI import Ui_MainWindow
 
 #------------------------------------------------------------
 # Scrape javguru for a single item's metadata
@@ -443,15 +444,19 @@ def parseInfoJavtrailers(info, log_callback=None):
 #------------------------------------------------------------
 # Create folder structure for the item
 #------------------------------------------------------------
-def manageFileStucture(dir, metadata, log_callback=None, update_callback=None):
+def manageFileStucture(dir, renameType, metadata, log_callback=None, update_callback=None):
     if log_callback:
         log_callback("Creating folder for " + metadata['Code'] + "\n")
     else:
         print("Creating folder for " + metadata['Code'] + "\n")
 
-    folder_name = metadata["Code"] + ' [' + metadata['Studio'] + '] - ' + metadata['Title'] + ' (' + metadata['Release Date'].split('-')[0] + ')'
-    if (len(folder_name) > 200):
-        folder_name = metadata["Code"] + ' [' + metadata['Studio'] + '] - ' + metadata['Title'][:150] + ' (' + metadata['Release Date'].split('-')[0] + ')'
+    if renameType:
+        folder_name = metadata["Code"]
+    else:
+        folder_name = metadata["Code"] + ' [' + metadata['Studio'] + '] - ' + metadata['Title'] + ' (' + metadata['Release Date'].split('-')[0] + ')'
+        if (len(folder_name) > 200):
+            folder_name = metadata["Code"]
+
     invalid_chars = '<>:"/\\|?*'
     for char in invalid_chars:
         folder_name = folder_name.replace(char, '_')
@@ -460,7 +465,8 @@ def manageFileStucture(dir, metadata, log_callback=None, update_callback=None):
     if not os.path.exists(abspath):
         os.makedirs(abspath)
 
-    os.rename(os.path.join(dir, metadata["OGfilename"]), abspath + '/' + metadata["OGfilename"])
+    extension = os.path.splitext(metadata["OGfilename"])[1]
+    os.rename(os.path.join(dir, metadata["OGfilename"]), abspath + '/' + metadata["Code"] + extension)
     downloadImage(metadata['Code'], metadata['Image'], abspath, log_callback=log_callback)
     createNFO(abspath, metadata, log_callback=log_callback)
 

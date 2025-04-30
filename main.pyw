@@ -1,6 +1,8 @@
 import sys
 import os
 import threading
+from operator import truediv
+
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtGui import QStandardItemModel, QStandardItem
@@ -41,7 +43,7 @@ class MainWindow(QMainWindow):
 
     def init_table_model(self):
         self.table_model = QStandardItemModel()
-        self.table_model.setHorizontalHeaderLabels(['Original', '--> New'])
+        self.table_model.setHorizontalHeaderLabels(['Original name', 'New name'])
         self.ui.processList.setModel(self.table_model)
         self.ui.processList.horizontalHeader().setStretchLastSection(True)
 
@@ -66,7 +68,6 @@ class MainWindow(QMainWindow):
             self.ui.Dir.setText(directory)
 
     def run_scraper(self):
-        #isheadless = self.ui.isHeadlessCheckbox.isChecked()
         directory = self.ui.Dir.text()
         if not directory:
             self.update_logs("Please select a directory first.\n")
@@ -78,7 +79,7 @@ class MainWindow(QMainWindow):
         threading.Thread(target=self.scraper_thread, args=(directory,), daemon=True).start()
 
     def run_gfmerger(self):
-        #isheadless = self.ui.isHeadlessCheckbox.isChecked()
+
         directory = self.ui.Dir.text()
         if not directory:
             self.update_logs("Please select a directory first.\n")
@@ -93,6 +94,7 @@ class MainWindow(QMainWindow):
 # Run scraper thread once button pressed.
 # Scapes javguru and then javtrailers for metadata.
 #-----------------------------------------------------
+
     def scraper_thread(self, directory, isheadless=False):
         def log_callback(message, color="black"):
             self.log_signal.update.emit(message, color)
@@ -101,6 +103,7 @@ class MainWindow(QMainWindow):
             self.table_update_signal.update.emit(original_filename, new_folder_name)
 
         cached_NFO = ut.readJson("NFO.json")
+        renameType = self.ui.folderNameCheckbox.isChecked()
         missing = [] # Stores entry for every failed javguru search
         try:
             banngoTuple = scraper.findAVIn(directory, log_callback=log_callback, update_callback=update_table)
@@ -113,7 +116,7 @@ class MainWindow(QMainWindow):
                     log_callback(f"Failed to get search results for {eachBanngo}\n", "orange")
                     continue
                 try:
-                    scraper.manageFileStucture(directory, data, log_callback=log_callback, update_callback=update_table)
+                    scraper.manageFileStucture(directory, renameType, data, log_callback=log_callback, update_callback=update_table)
                     log_callback(f"Processed: {data['Code']}\n")
                 except Exception as e:
                     log_callback(f"Error: {str(e)} occurred while processing {data['Title']}\n")
