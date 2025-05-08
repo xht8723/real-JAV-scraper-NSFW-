@@ -88,7 +88,7 @@ github的release页面会有打包好的exe文件，直接用就好。
 
 --------------
 
-如果想自己build，只要安装python3，然后安装requirements.txt里的东西就好了：```git install -r requirements.txt```
+如果想自己build，只要安装python3，然后安装requirements.txt里的东西就好了：```pip install -r requirements.txt```
 
 只在windows测试过，其它系统怎么样我完全不知道。
 
