@@ -6,8 +6,12 @@ build
 dist
 main.spec
 test.py
+test2.py
 compileBinary.bat
 NFO.json
 remove_util.py
 OFJE.html
+FirefoxPortable
+downloaded_files
+img_cache
 ```

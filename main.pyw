@@ -1,8 +1,6 @@
 import sys
 import os
 import threading
-from operator import truediv
-
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtGui import QStandardItemModel, QStandardItem
@@ -106,29 +104,31 @@ class MainWindow(QMainWindow):
         renameType = self.ui.folderNameCheckbox.isChecked()
         missing = [] # Stores entry for every failed javguru search
         try:
-            banngoTuple = scraper.findAVIn(directory, log_callback=log_callback, update_callback=update_table)
-            driver = ut.startFirefox("https://jav.guru/", log_callback=log_callback, isheadless=isheadless)
+            banngoTuple = ut.findAVIn(directory, log_callback=log_callback, update_callback=update_table)
+            driver = ut.startChrome("https://jav.guru/", log_callback=log_callback, isheadless=isheadless)
             for eachBanngo in banngoTuple[0]:
                 ogfile = banngoTuple[1][eachBanngo]
                 data = scraper.processSearchJavguru(driver, eachBanngo, ogfile, cached_NFO, log_callback=log_callback)
                 if data == None:
                     missing.append(eachBanngo)
-                    log_callback(f"Failed to get search results for {eachBanngo}\n", "orange")
+                    log_callback(f"Failed to get search results for {eachBanngo} \n", "orange")
                     continue
                 try:
-                    scraper.manageFileStucture(directory, renameType, data, log_callback=log_callback, update_callback=update_table)
+                    ut.manageFileStucture(directory, renameType, data, log_callback=log_callback, update_callback=update_table)
                     log_callback(f"Processed: {data['Code']}\n")
                 except Exception as e:
-                    log_callback(f"Error: {str(e)} occurred while processing {data['Title']}\n")
+                    error_type = type(e).__name__
+                    log_callback(f"Error: [{error_type}]{str(e)} occurred while processing {data['Title']}\n")
 
             ut.writeJson(cached_NFO, "NFO.json")
         except Exception as e:
-            log_callback(f"Error: {str(e)}\n", "red")
+            error_type = type(e).__name__
+            log_callback(f"Error: [{error_type}]{str(e)}\n", "red")
 
         try:
             if len(missing) > 0: # Stores entry for every failed javguru search
                 cached_NFO = ut.readJson("NFO.json")
-                ut.gotoURL(driver, "https://javtrailers.com/")
+                ut.cdp_gotoURL(driver, "https://javtrailers.com/")
                 for eachBanngo in missing:
                     ogfile = banngoTuple[1][eachBanngo]
                     data = scraper.processSearchJavtrailers(driver, eachBanngo, ogfile, cached_NFO, log_callback=log_callback)
@@ -136,10 +136,11 @@ class MainWindow(QMainWindow):
                         log_callback(f"Failed to get search results for {eachBanngo}\n", "orange")
                         continue
                     try:
-                        scraper.manageFileStucture(directory, data, log_callback=log_callback, update_callback=update_table)
+                        ut.manageFileStucture(directory, data, log_callback=log_callback, update_callback=update_table)
                         log_callback(f"Processed: {data['Code']}\n")
                     except Exception as e:
-                        log_callback(f"Error: {str(e)} occurred while processing {data['Title']}\n")
+                        error_type = type(e).__name__
+                        log_callback(f"Error: [{error_type}]{str(e)} occurred while processing {data['Title']}\n")
 
         except Exception as e:
             log_callback(f"Error: {str(e)}\n", "red")
@@ -171,7 +172,8 @@ class MainWindow(QMainWindow):
                     log_callback(f"Adding multi Names: {cached_names[actor]}\n")
                     del Local_actors[actor]
         except Exception as e:
-            log_callback(f"Error: {str(e)}\n", "red")
+            error_type = type(e).__name__
+            log_callback(f"Error: [{error_type}]{str(e)}\n", "red")
 
         try:
             driver = ut.startFirefox("https://javmodel.com/",log_callback=log_callback, isheadless=isheadless)
@@ -190,7 +192,8 @@ class MainWindow(QMainWindow):
         except Exception as e:
             cached_names = ut.formatnameJson(cached_names)
             ut.writeJson(cached_names, "names.json")
-            log_callback(f"Error: {str(e)}\n", "red")
+            error_type = type(e).__name__
+            log_callback(f"Error: [{error_type}]{str(e)}\n", "red")
 
         try:
             if len(missing) > 0:
@@ -209,7 +212,8 @@ class MainWindow(QMainWindow):
         except Exception as e:
             cached_names = ut.formatnameJson(cached_names)
             ut.writeJson(cached_names, "names.json")
-            log_callback(f"Error: {str(e)}\n", "red")
+            error_type = type(e).__name__
+            log_callback(f"Error: [{error_type}]{str(e)}\n", "red")
         driver.quit()
         self.ui.actressSearch.setEnabled(True)
         log_callback("\nFinished modifying names!\n", "green")
