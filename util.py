@@ -6,14 +6,56 @@ import re
 import shutil
 from datetime import date, datetime
 
+def cdp_open_url(driver, url, log_callback=None):
+    """
+    Opens a URL in a new tab using CDP mode.
+    
+    :param driver: The Seleniumbase WebDriver instance.
+    :param url: The URL to open.
+    :param log_callback: Optional callback function for logging messages.
+    """
+    if log_callback:
+        log_callback(f"Opening URL: {url}\n")
+    driver.cdp.open_new_tab(url)
+
+def cdp_close_tab(driver, log_callback=None):
+    """
+    Closes the current tab using CDP mode.
+    
+    :param driver: The Seleniumbase WebDriver instance.
+    :param log_callback: Optional callback function for logging messages.
+    """
+    if log_callback:
+        log_callback("Closing current tab.\n")
+    driver.cdp.close_active_tab()
+
+def cdp_close_ad_tab(driver, log_callback=None):
+    """
+    Closes the current tab if it is an advertisement tab.
+    
+    :param driver: The Seleniumbase WebDriver instance.
+    :param log_callback: Optional callback function for logging messages.
+    """
+    if log_callback:
+        log_callback("Closing ad tab if present.\n")
+    try:
+        tabs = driver.cdp.get_tabs()
+        while len(tabs) > 1:
+            driver.cdp.switch_to_tab(len(tabs) - 1)  # Switch to the last tab
+            driver.cdp.close_active_tab()            # Close the last tab
+            tabs = driver.cdp.get_tabs()             # Refresh the tabs list
+        driver.cdp.switch_to_tab(0)
+        return
+    except Exception as e:
+        if log_callback:
+            log_callback(f"Failed to close ad tab: {e}\n")
+
 def cdp_find_element(driver, cssSelector, retries=3, delay=1, log_callback=None):
     """
     Attempts to find an element on the page, retrying if necessary.
     
-    :param driver: The Selenium WebDriver instance.
-    :param by: The method to locate the element (e.g., By.ID, By.XPATH).
-    :param value: The value to locate the element.
-    :param target: Optional name for logging purposes.
+    :param driver: The Seleniumbase WebDriver instance.
+    :param cssSelector: css style selector to locate the element.
     :param retries: Number of retries if the element is not found.
     :param delay: Delay between retries in seconds.
     :param log_callback: Optional callback function for logging messages.
@@ -26,7 +68,9 @@ def cdp_find_element(driver, cssSelector, retries=3, delay=1, log_callback=None)
             # Now check presence and visibility
             isPresent = driver.cdp.is_element_present(cssSelector)
             isVisible = driver.cdp.is_element_visible(cssSelector)
+            driver.cdp.assert_element_visible(cssSelector, timeout=5)
             if isPresent and isVisible:
+                driver.cdp.assert_element_visible(cssSelector, timeout=5)
                 element = driver.cdp.find_element(cssSelector, timeout=5)
                 return element
         except Exception as e:
@@ -60,7 +104,7 @@ def cdp_press_keys(driver, cssSelector, keys, log_callback=None):
     :param log_callback: Optional callback function for logging messages.
     """
     if log_callback:
-        log_callback(f"Pressing keys on {cssSelector}: {keys}\n")
+        log_callback(f"Pressing enter on {cssSelector}\n")
     element = cdp_find_element(driver, cssSelector, retries=3, delay=1, log_callback=log_callback)
     if element:
         driver.cdp.press_keys(cssSelector, keys)
@@ -124,6 +168,7 @@ def cdp_element_click(driver, cssSelector, log_callback=None):
 def startChrome(url, log_callback=None, isheadless=False):
     """
     Starts a Chrome browser instance and activates CDP mode for the specified URL.
+
     :param url: The URL to navigate to.
     :param log_callback: Optional callback function for logging messages.
     :param isheadless: Boolean indicating whether to run the browser in headless mode.
@@ -138,6 +183,7 @@ def startChrome(url, log_callback=None, isheadless=False):
 def cdp_gotoURL(driver, url, log_callback=None):
     """
     Navigates the browser to the specified URL using CDP.
+
     :param driver: The Selenium WebDriver instance.
     :param url: The URL to navigate to.
     :param log_callback: Optional callback function for logging messages.
@@ -151,6 +197,7 @@ def cdp_gotoURL(driver, url, log_callback=None):
 def readJson(filename):
     """
     Reads a JSON file and returns its content as a dictionary.
+
     :param filename: The path to the JSON file.
     :return: A dictionary containing the JSON data, or an empty dictionary if the file does not exist.
     """
@@ -163,6 +210,7 @@ def readJson(filename):
 def writeJson(data, filename):
     """
     Writes a dictionary to a JSON file.
+
     :param data: The dictionary to write to the file.
     :param filename: The path to the JSON file.
     """
@@ -172,6 +220,7 @@ def writeJson(data, filename):
 def formatnameJson(data):
     """
     Formats a JSON dictionary by ensuring that each alias is also a key in the dictionary.
+
     :param data: The dictionary to format.
     :return: The formatted dictionary with aliases as keys.
     """
@@ -184,6 +233,7 @@ def formatnameJson(data):
 def check_cache(banngo, cached_NFO, OGfile, log_callback=None):
     """
     Checks if the given item is already in the cached NFO data.
+
     :param banngo: The key to check in the cached NFO data.
     :param cached_NFO: The cached NFO data as a dictionary.
     :return: The cached data if the item is found, otherwise None.
@@ -191,14 +241,18 @@ def check_cache(banngo, cached_NFO, OGfile, log_callback=None):
     if banngo in cached_NFO:# check if the item is already in the json, return stored data if it is
         if log_callback:
             log_callback(f"{OGfile} in cache.\n")
-        else:
-            print(f"{OGfile} in cache.\n")
         return cached_NFO[banngo]
+    return None
     
-#------------------------------------------------------------
-# Create NFO file
-#------------------------------------------------------------
 def createNFO(path, metadata, log_callback=None):
+    """
+    Creates an NFO file for the given metadata in the specified path.
+
+    :param path: The directory where the NFO file will be created.
+    :param metadata: A dictionary containing the metadata for the NFO file.
+    :param log_callback: Optional callback function for logging messages.
+    """
+
     if log_callback:
         log_callback("Creating NFO for " + metadata['Code'] + "\n")
     else:
@@ -232,10 +286,16 @@ def createNFO(path, metadata, log_callback=None):
         f.write('\t<thumb>' + metadata['Image'] + '</thumb>\n')
         f.write('</movie>')
 
-#------------------------------------------------------------
-# Find AV files in directory
-#------------------------------------------------------------
+
 def findAVIn(directory, log_callback=None, update_callback=None):
+    """
+    Scans the specified directory for video files and extracts the banngo code from their filenames.
+
+    :param directory: The directory to scan for video files.
+    :param log_callback: Optional callback function for logging messages.
+    :param update_callback: Optional callback function to update the status of each file.
+    :return: A tuple containing a list of banngo codes and a dictionary mapping banngo codes to filenames.
+    """
     file_format = [
     '.mp4',
     '.MP4',
@@ -273,10 +333,18 @@ def findAVIn(directory, log_callback=None, update_callback=None):
                     print(f"skipped {file}\n")
     return pending_BanngoList, pending_fileList
 
-#------------------------------------------------------------
-# Download image
-#------------------------------------------------------------
-def cdp_downloadImage(element, banngo, path, log_callback=None):
+
+def cdp_downloadImage(url, driver, banngo, path, log_callback=None):
+    """
+    Screenshot the target element(an image) from the specified element and saves it to the given path using cdp.
+
+    :param element: The Selenium WebDriver element containing the image.
+    :param banngo: The banngo code used to name the image file.
+    :param path: The directory where the image will be saved.
+    :param log_callback: Optional callback function for logging messages.
+    :return: None if the download was successful, or None if an error occurred.
+    """
+    from seleniumbase import SB
     if log_callback:
         log_callback("Downloading image for " + banngo + "\n")
     else:
@@ -284,9 +352,16 @@ def cdp_downloadImage(element, banngo, path, log_callback=None):
     try:
         if not os.path.exists(path):
             os.makedirs(path)
-        filename = os.path.join(path, f'{banngo}.jpg')
-        element.save_screenshot(filename)
+
+        with SB(browser="chrome", uc=True) as sb:
+            sb.download_file(url, path)
+            sb.assert_downloaded_file(path, timeout=10)
+
+        downloaded_file = os.path.join(path, url.split('/')[-1])
+        filename = os.path.join(path, f'{banngo.upper()}.jpg')
+        os.rename(downloaded_file, filename)
         return 
+    
     except Exception as e:
         error_type = type(e).__name__
         if log_callback:
@@ -294,11 +369,60 @@ def cdp_downloadImage(element, banngo, path, log_callback=None):
         else:
             print(f"Failed to download image for {banngo}: [{error_type}] {e}\n")
         return None
+    
+def cdp_screenshotElement(driver, url, path, banngo, log_callback=None):
+    """
+    Takes a screenshot of the specified element and saves it to the given path.
 
-#------------------------------------------------------------
-# Parse metadata specific to javguru
-#------------------------------------------------------------
+    :param element: The Selenium WebDriver element to screenshot.
+    :param path: The directory where the screenshot will be saved.
+    :param banngo: The banngo code used to name the screenshot file.
+    :param log_callback: Optional callback function for logging messages.
+    :return: None if the screenshot was successful, or None if an error occurred.
+    """
+    if log_callback:
+        log_callback("Taking screenshot for " + banngo + "\n")
+    else:
+        print("Taking screenshot for " + banngo + "\n")
+    
+    try:
+        if not os.path.exists(path):
+            os.makedirs(path)
+        filename = os.path.join(path, f'{banngo.upper()}.jpg')
+        if os.path.exists(filename):
+            if log_callback:
+                log_callback(f"Screenshot for {banngo} already exists, skipping.\n")
+            else:
+                print(f"Screenshot for {banngo} already exists, skipping.\n")
+            return filename
+        
+        cdp_open_url(driver, url, log_callback=log_callback)
+        pic = cdp_find_element(driver, 'img', log_callback=log_callback)
+        pic.save_screenshot(filename)
+        if log_callback:
+            log_callback(f"Screenshot saved as {filename}\n")
+        else:
+            print(f"Screenshot saved as {filename}\n")
+        cdp_close_tab(driver, log_callback=log_callback)
+        driver.cdp.switch_to_tab(0)  # Switch back to the original tab
+        return filename
+    except Exception as e:
+        error_type = type(e).__name__
+        if log_callback:
+            log_callback(f"Failed to take screenshot for {banngo}: [{error_type}] {e}\n")
+        else:
+            print(f"Failed to take screenshot for {banngo}: [{error_type}] {e}\n")
+        return None
+
 def parseInfoJavguru(info, log_callback=None):
+    """
+    Parses metadata from a Javguru info dictionary.
+
+    :param info: A dictionary containing the metadata information.
+    :param log_callback: Optional callback function for logging messages.
+    :return: A dictionary containing the parsed movie information.
+    """
+
     pattern = re.compile(r'\[([a-zA-Z]+\d*?-\d+[a-zA-Z]?)\]')
     title = re.sub(pattern, '', info['title']).strip()
     metadata = info['metadata'].replace('Movie Information:', '')
@@ -341,10 +465,15 @@ def parseInfoJavguru(info, log_callback=None):
 
     return movie_info
 
-#------------------------------------------------------------
-# Parse metadata specific to javtrailers
-#------------------------------------------------------------
 def parseInfoJavtrailers(info, log_callback=None):
+    """
+    Parses metadata from a Javtrailers info dictionary.
+
+    :param info: A dictionary containing the metadata information.
+    :param log_callback: Optional callback function for logging messages.
+    :return: A dictionary containing the parsed movie information.
+    """
+
     html = info['metadata']
     pattern = re.compile(r'\[([a-zA-Z]+\d*?-\d+[a-zA-Z]?)\]')
     title = re.sub(pattern, '', info['title']).strip()
@@ -393,10 +522,17 @@ def parseInfoJavtrailers(info, log_callback=None):
 
     return movie_info
 
-#------------------------------------------------------------
-# Create folder structure for the item
-#------------------------------------------------------------
 def manageFileStucture(dir, renameType, metadata, log_callback=None, update_callback=None):
+    """
+    Creates a folder structure for the given metadata and moves the file to the new folder.
+
+    :param dir: The directory where the file is currently located.
+    :param renameType: Boolean indicating whether to rename the folder based on the code only.
+    :param metadata: A dictionary containing the metadata for the file.
+    :param log_callback: Optional callback function for logging messages.
+    :param update_callback: Optional callback function to update the status of the file.
+    :return: None
+    """
     if log_callback:
         log_callback("Creating folder for " + metadata['Code'] + "\n")
     else:
@@ -405,13 +541,16 @@ def manageFileStucture(dir, renameType, metadata, log_callback=None, update_call
     if renameType:
         folder_name = metadata["Code"]
     else:
-        folder_name = metadata["Code"] + ' [' + metadata['Studio'] + '] - ' + metadata['Title'] + ' (' + metadata['Release Date'].split('-')[0] + ')'
-        if (len(folder_name) > 200):
-            folder_name = metadata["Code"]
+        title = metadata["Title"]
+        if len(title) > 180:
+            title = title.split(',')[0]  # Truncate title if too long
+            if len(title) > 180:
+                title = title[:180]
+        folder_name = metadata["Code"] + ' [' + metadata['Studio'] + '] - ' + title + ' (' + metadata['Release Date'].split('-')[0] + ')'
 
     invalid_chars = '<>:"/\\|?*'
     for char in invalid_chars:
-        folder_name = folder_name.replace(char, '_')
+        folder_name = folder_name.replace(char, '-')
 
     abspath = os.path.join(dir, folder_name)
     if not os.path.exists(abspath):

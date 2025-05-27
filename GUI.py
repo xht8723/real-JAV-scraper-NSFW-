@@ -91,7 +91,7 @@ class Ui_MainWindow(object):
 
         self.folderNameCheckbox = QCheckBox("Use code only as folder name")
         self.folderNameCheckbox.setObjectName("codeAsFolderNameCheckbox")
-        self.folderNameCheckbox.setToolTip("Rename the folder to only the code of the video")
+        self.folderNameCheckbox.setToolTip("'yyy-xxx' will be used as folder name instead of 'yyy-xxx[Studio][Title][Year]'")
         group_layout.addWidget(self.folderNameCheckbox, 4, 0, 1, 2)
         
         self.startBt = QPushButton("Start scrapping")
@@ -100,6 +100,7 @@ class Ui_MainWindow(object):
 
         self.actressSearch = QPushButton("Format actress names")
         self.actressSearch.setObjectName("actressSearch")
+        self.actressSearch.setToolTip("Will search for exsisting actress names online for JP/CN/EN names, adjust NFO files to make actress appear as same person in Jellyfin")
         group_layout.addWidget(self.actressSearch, 3, 0, 1, 2)
         
         right_layout.addWidget(self.groupBox)
@@ -124,7 +125,7 @@ class Ui_MainWindow(object):
         self.directoryBt.setText("...")
         self.info.setText("Please consider supporting me!  :D")
         self.isHeadlessCheckbox.setText("Headless Mode")
-        self.folderNameCheckbox.setText("Rename the folder to only the code of the video")
+        self.folderNameCheckbox.setText("Use AV code only as folder name")
 
 
 class hardlinkWindow(QMainWindow):
