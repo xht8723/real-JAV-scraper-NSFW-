@@ -101,6 +101,7 @@ class MainWindow(QMainWindow):
         def update_table(original_filename, new_folder_name):
             self.table_update_signal.update.emit(original_filename, new_folder_name)
 
+        log_callback("\nStarting processing files...\n", "black")
         cached_NFO = ut.readJson("NFO.json")
         renameType = self.ui.folderNameCheckbox.isChecked()
         missing = [] # Stores entry for every failed javguru search
@@ -173,6 +174,8 @@ class MainWindow(QMainWindow):
 
         def update_table(original_filename, new_folder_name):
             self.table_update_signal.update.emit(original_filename, new_folder_name)
+
+        log_callback("\nStarting modifying names...\n", "black")
         
         cached_names = ut.readJson("names.json")
         missing = []
