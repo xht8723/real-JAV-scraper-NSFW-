@@ -1,6 +1,5 @@
 import re
 import os
-from selenium.webdriver.common.by import By
 import util as ut
 
 #----------------------------------------------

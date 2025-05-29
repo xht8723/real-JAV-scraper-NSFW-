@@ -1,3 +1,4 @@
 selenium
 PySide6
 requests
+seleniumbase
