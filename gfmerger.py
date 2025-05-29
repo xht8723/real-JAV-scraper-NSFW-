@@ -6,50 +6,31 @@ import util as ut
 #----------------------------------------------
 # Scrape actress names from javmodels
 #----------------------------------------------
-def processSearch(driver, name, cached_names, log_callback=None):
+def processSearch(driver, name, cached_names = None, log_callback=None):
+    if cached_names is None:
+        cached_names = {}
+
     if name in cached_names:
         return cached_names[name]
 
-    wait = ut.waitVisible(driver, By.XPATH, "/html/body/nav[1]/div/button[2]", log_callback=log_callback)
-    if not wait:
-        raise(Exception("Search button not found. Please check connection.1"))
-    
     if log_callback:
         log_callback("Searching for: " + name + "\n")
     else:
         print("Searching for: " + name + "\n")
 
-    searchbtn = ut.retry_find_element(driver, By.XPATH, "/html/body/nav[1]/div/button[2]",target="search button", log_callback = log_callback)
-    if searchbtn is None:
-        raise(Exception("Search button not found. Please check connection.2"))
-    
-    driver.execute_script("arguments[0].scrollIntoView();", searchbtn)
-    ut.retry_click(driver, By.XPATH, "/html/body/nav[1]/div/button[2]")
-    wait = ut.waitVisible(driver, By.XPATH, '//*[@id="flq_popup_search"]/div/div[1]/div/div/form/input', log_callback=log_callback)
+    wait = ut.cdp_find_element(driver, 'svg[width="22"][height="22"][viewBox="0 0 22 22"]', log_callback=log_callback)
     if not wait:
-        driver.execute_script("arguments[0].scrollIntoView();", searchbtn)
-        ut.retry_click(driver, By.XPATH, "/html/body/nav[1]/div/button[2]")
-        wait = ut.waitVisible(driver, By.XPATH, '//*[@id="flq_popup_search"]/div/div[1]/div/div/form/input', log_callback=log_callback)
-        if not wait:
-            raise(Exception("Search field not found. Please check connection.3"))
+        raise(Exception("Search button not found. Please check connection.1"))
     
-    searchField = ut.retry_find_element(driver, By.XPATH, '//*[@id="flq_popup_search"]/div/div[1]/div/div/form/input', target="search field", log_callback=log_callback)
-    if searchField is None:
-        raise(Exception("Search field not found. Please check connection.4"))
-    
-    currentURL = driver.current_url
-    driver.execute_script("arguments[0].scrollIntoView();", searchField)
-    ut.retry_clear(searchField,By.XPATH, '//*[@id="flq_popup_search"]/div/div[1]/div/div/form/input', log_callback=log_callback)
-    ut.retry_send_keys(driver, By.XPATH, '//*[@id="flq_popup_search"]/div/div[1]/div/div/form/input', name, log_callback=log_callback)
-    wait = ut.waitURLChange(driver, currentURL, log_callback=log_callback)
-    if not wait:
-        driver.execute_script("arguments[0].scrollIntoView();", searchField)
-        ut.retry_clear(searchField,By.XPATH, '//*[@id="flq_popup_search"]/div/div[1]/div/div/form/input', log_callback=log_callback)
-        ut.retry_send_keys(driver, By.XPATH, '//*[@id="flq_popup_search"]/div/div[1]/div/div/form/input', name, log_callback=log_callback)
-        wait = ut.waitURLChange(driver, currentURL, log_callback=log_callback)
-        if not wait:
-            raise(Exception("Search failed. Please check connection.5"))
-    wait = ut.waitVisible(driver, By.XPATH, "/html/body/div[4]/div/div", log_callback=log_callback)
+    driver.cdp.wait_for_element_visible('svg[width="22"][height="22"][viewBox="0 0 22 22"]')
+    ut.cdp_scroll_to_element(driver, 'svg[width="22"][height="22"][viewBox="0 0 22 22"]', log_callback=log_callback)
+    ut.cdp_element_click(driver, 'svg[width="22"][height="22"][viewBox="0 0 22 22"]', log_callback=log_callback)
+    driver.cdp.wait_for_element_visible('.form-control.form-control-lg.flq-form-glass.flq-search-input')
+    ut.cdp_clear(driver, '.form-control.form-control-lg.flq-form-glass.flq-search-input', log_callback=log_callback)
+    ut.cdp_type(driver, '.form-control.form-control-lg.flq-form-glass.flq-search-input', name, log_callback=log_callback)
+    ut.cdp_press_keys(driver, '.form-control.form-control-lg.flq-form-glass.flq-search-input', "\n", log_callback=log_callback)
+
+    wait = ut.cdp_find_element(driver, '.content-wrap', log_callback=log_callback)
     if not wait:
         if log_callback:
             log_callback("Seaching for " + name + " timed out1\n")
@@ -57,97 +38,59 @@ def processSearch(driver, name, cached_names, log_callback=None):
             print("Seaching for " + name + " timed out1\n")
         return None
     
-    try:
-        checkresult = driver.find_elements(By.XPATH, "/html/body/div[4]/div/div")[0].get_attribute("innerHTML")
-        if "Result Not Found" in checkresult:
-            if log_callback:
-                log_callback("No result found for " + name + "\n")
-            else:
-                print("No result found for " + name + "\n")
-            return None
-    except:
-        pass
-
-    result = ut.retry_find_element(driver, By.XPATH, "/html/body/div[4]/div/div/div/div[1]/div/div[1]/a/span/img", log_callback=log_callback)
-    if result is None:
+    if "Result Not Found" in wait.text:
         if log_callback:
-            log_callback("Seaching for " + name + " timed out2\n")
+            log_callback("No result found for " + name + "\n")
         else:
-            print("Seaching for " + name + " timed out2\n")
+            print("No result found for " + name + "\n")
         return None
-    
-    currentURL = driver.current_url
-    driver.execute_script("arguments[0].scrollIntoView();", result)
-    ut.retry_click(driver, By.XPATH, "/html/body/div[4]/div/div/div/div[1]/div/div[1]/a/span/img")
-    wait = ut.waitURLChange(driver, currentURL, log_callback=log_callback)
-    if not wait:
-        driver.execute_script("arguments[0].scrollIntoView();", result)
-        ut.retry_click(driver, By.XPATH, "/html/body/div[4]/div/div/div/div[1]/div/div[1]/a/span/img")
-        wait = ut.waitURLChange(driver, currentURL, log_callback=log_callback)
+
+    wait = ut.cdp_find_element(driver, '.card-title.h6', log_callback=log_callback)
+    ut.cdp_scroll_to_element(driver, '.card-title.h6', log_callback=log_callback)
+    ut.cdp_element_click(driver, '.card-title.h6', log_callback=log_callback)
+
+    if 'hd' in driver.cdp.get_current_url():
+        wait = ut.cdp_find_element(driver, 'a.flq-tag', log_callback=log_callback)
         if not wait:
             if log_callback:
-                log_callback("Seaching for " + name + " timed out3\n")
+                log_callback("Seaching for " + name + " timed out2\n")
             else:
-                print("Seaching for " + name + " timed out3\n")
+                print("Seaching for " + name + " timed out2\n")
             return None
+        ut.cdp_scroll_to_element(driver, 'a.flq-tag', log_callback=log_callback)
+        ut.cdp_element_click(driver, 'a.flq-tag', log_callback=log_callback)
 
-    if "hd" in driver.current_url:
-        wait = ut.waitVisible(driver, By.XPATH, "/html/body/div[4]/div/div/div[2]/div[1]/div/div/table/tbody/tr[1]/td[2]/div/ul/li/a", log_callback=log_callback)
-        if not wait:
-            if log_callback:
-                log_callback("Seaching for " + name + " timed out4\n")
-            else:
-                print("Seaching for " + name + " timed out4\n")
-            return None
-        starring = ut.retry_find_element(driver, By.XPATH, "/html/body/div[4]/div/div/div[2]/div[1]/div/div/table/tbody/tr[1]/td[2]/div/ul/li/a", target= "starring", log_callback=log_callback)
-        if starring is None:
-            return None
-        currentURL = driver.current_url
-        driver.execute_script("arguments[0].scrollIntoView();", starring)
-        ut.retry_click(starring, By.XPATH, "/html/body/div[4]/div/div/div[2]/div[1]/div/div/table/tbody/tr[1]/td[2]/div/ul/li/a")
-        wait = ut.waitURLChange(driver, currentURL, log_callback=log_callback)
-        if not wait:
-            driver.execute_script("arguments[0].scrollIntoView();", starring)
-            ut.retry_click(starring, By.XPATH, "/html/body/div[4]/div/div/div[2]/div[1]/div/div/table/tbody/tr[1]/td[2]/div/ul/li/a")
-            wait = ut.waitURLChange(driver, currentURL, log_callback=log_callback)
-            if not wait:
-                if log_callback:
-                    log_callback("Seaching for " + name + " timed out5\n")
-                else:
-                    print("Seaching for " + name + " timed out5\n")
-                return None
-
-    wait = ut.waitVisible(driver, By.XPATH, "/html/body/div[3]/div[3]/div/div[2]", log_callback=log_callback)
-    if not wait:
+    card = ut.cdp_find_element(driver, '.col-12.col-lg-7.col-xxl-8.remove-animation.card', log_callback=log_callback)
+    if not card:
         if log_callback:
-            log_callback("Seaching for " + name + " timed out6\n")
+            log_callback("Seaching for " + name + " timed out3\n")
         else:
-            print("Seaching for " + name + " timed out6\n")
-        return None
-    
-    card = ut.retry_find_element(driver, By.XPATH, "/html/body/div[3]/div[3]/div/div[2]", target= "card", log_callback=log_callback)
-    if card is None:
+            print("Seaching for " + name + " timed out3\n")
         return None
     
     innerHTML = card.get_attribute("innerHTML")
     names = processCardInfo(innerHTML, log_callback=log_callback)
-    if name.lower() not in [n.lower() for n in names]:
-        if log_callback:
-            log_callback(f"Name {name} not found in search results\n")
-        else:
-            print(f"Name {name} not found in search results\n")
-        return None
-    cached_names[name] = names
-    return names
+
+    for each in names:
+        if name.lower() in each.lower():
+            cached_names[name] = names
+            return names
+    if log_callback:
+        log_callback(f"Name {name} not found in search results\n")
+    else:
+        print(f"Name {name} not found in search results\n")
+    return None
 
 #----------------------------------------------
 # Scrape actress names from javguru
 #----------------------------------------------
-def processSearchJavguru(driver, name, cached_names, log_callback=None):
+def processSearchJavguru(driver, name, cached_names = None, log_callback=None):
+    if cached_names is None:
+        cached_names = {}
     if name in cached_names:
         return cached_names[name]
-    
-    wait = ut.waitVisible(driver, By.XPATH, '//*[@id="main"]/div[1]/div[2]/form/input', log_callback=log_callback)
+
+    wait = ut.cdp_find_element(driver, '.search-input', log_callback=log_callback)
     if not wait:
         raise(Exception("Search field not found. Please check connection.1"))
     
@@ -155,27 +98,13 @@ def processSearchJavguru(driver, name, cached_names, log_callback=None):
         log_callback("Searching for: " + name + "\n")
     else:
         print("Searching for: " + name + "\n")
+    
+    ut.cdp_scroll_to_element(driver, '.search-input', log_callback=log_callback)
+    ut.cdp_clear(driver, '.search-input', log_callback=log_callback)
+    ut.cdp_type(driver, '.search-input', name, log_callback=log_callback)
+    ut.cdp_press_keys(driver, '.search-input', "\n", log_callback=log_callback)
 
-    searchField = ut.retry_find_element(driver, By.XPATH, '//*[@id="main"]/div[1]/div[2]/form/input', target="search field", log_callback=log_callback)
-    if searchField is None:
-        raise(Exception("Search field not found. Please check connection.2"))
-    
-    currentURL = driver.current_url
-    driver.execute_script("arguments[0].scrollIntoView();", searchField)
-    driver.execute_script("arguments[0].scrollIntoView();", searchField)
-    ut.retry_clear(searchField, By.XPATH, '//*[@id="main"]/div[1]/div[2]/form/input', log_callback=log_callback)
-    ut.retry_send_keys(driver, By.XPATH, '//*[@id="main"]/div[1]/div[2]/form/input', name, log_callback=log_callback)
-    wait = ut.waitURLChange(driver, currentURL, log_callback=log_callback)
-    if not wait:
-        driver.execute_script("arguments[0].scrollIntoView();", searchField)
-        driver.execute_script("arguments[0].scrollIntoView();", searchField)
-        ut.retry_clear(searchField, By.XPATH, '//*[@id="main"]/div[1]/div[2]/form/input', log_callback=log_callback)
-        ut.retry_send_keys(driver, By.XPATH, '//*[@id="main"]/div[1]/div[2]/form/input', name, log_callback=log_callback)
-        wait = ut.waitURLChange(driver, currentURL, log_callback=log_callback)
-        if not wait:
-            raise(Exception("Search failed. Please check connection.3"))
-    
-    wait = ut.waitVisible(driver, By.XPATH, '//*[@id="main"]/div[2]', log_callback=log_callback)
+    wait = ut.cdp_find_element(driver, '.actress-box', log_callback=log_callback)
     if not wait:
         if log_callback:
             log_callback("Seaching for " + name + " timed out1\n")
@@ -183,23 +112,36 @@ def processSearchJavguru(driver, name, cached_names, log_callback=None):
             print("Seaching for " + name + " timed out1\n")
         return None
     
-    checkresult = driver.find_elements(By.XPATH, '//*[@id="main"]/div[2]')[0].get_attribute("innerHTML")
-    if "No results found" in checkresult:
-        if log_callback:
-            log_callback("No result found for " + name + "\n")
-        else:
-            print("No result found for " + name + "\n")
-        return None
+    if "No results found" in wait.text:
+        if ' ' in name:
+            name = name.split(' ')[1] + ' ' + name.split(' ')[0]# try to reverse first and last name
+            ut.cdp_scroll_to_element(driver, '.search-input', log_callback=log_callback)
+            ut.cdp_clear(driver, '.search-input', log_callback=log_callback)
+            ut.cdp_type(driver, '.search-input', name, log_callback=log_callback)
+            ut.cdp_press_keys(driver, '.search-input', "\n", log_callback=log_callback)
+            wait = ut.cdp_find_element(driver, '.actress-box', log_callback=log_callback)
+            if not wait:
+                if log_callback:
+                    log_callback("Seaching for " + name + " timed out2\n")
+                else:
+                    print("Seaching for " + name + " timed out2\n")
+                return None
+            if "No results found" in wait.text:
+                if log_callback:
+                    log_callback("No result found for " + name + "\n")
+                else:
+                    print("No result found for " + name + "\n")
+                return None
     
-    enName = ut.retry_find_element(driver, By.XPATH, '//*[@id="main"]/div[2]/div/a/div/div[2]/span[1]', target="enName", log_callback=log_callback)
+    enName = ut.cdp_find_element(driver, '.actrees-name', log_callback=log_callback)
     if enName is None:
         if log_callback:
             log_callback("Seaching for " + name + " timed out2\n")
         else:
             print("Seaching for " + name + " timed out2\n")
         return None
-    
-    jpName = ut.retry_find_element(driver, By.XPATH, '//*[@id="main"]/div[2]/div/a/div/div[2]/span[3]', target="jpName", log_callback=log_callback)
+
+    jpName = ut.cdp_find_element(driver, 'span[style*="#7664bf"]', log_callback=log_callback)
     if jpName is None:
         if log_callback:
             log_callback("Seaching for " + name + " timed out3\n")

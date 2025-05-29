@@ -125,7 +125,7 @@ class Ui_MainWindow(object):
         self.directoryBt.setText("...")
         self.info.setText("Please consider supporting me!  :D")
         self.isHeadlessCheckbox.setText("Headless Mode")
-        self.folderNameCheckbox.setText("Use AV code only as folder name")
+        self.folderNameCheckbox.setText("Simple folder name(AV code only)")
 
 
 class hardlinkWindow(QMainWindow):

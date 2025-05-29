@@ -36,11 +36,12 @@ def cdp_close_ad_tab(driver, log_callback=None):
     :param driver: The Seleniumbase WebDriver instance.
     :param log_callback: Optional callback function for logging messages.
     """
-    if log_callback:
-        log_callback("Closing ad tab if present.\n")
+
     try:
         tabs = driver.cdp.get_tabs()
         while len(tabs) > 1:
+            if log_callback:
+                log_callback("Closing ad ad tab\n")
             driver.cdp.switch_to_tab(len(tabs) - 1)  # Switch to the last tab
             driver.cdp.close_active_tab()            # Close the last tab
             tabs = driver.cdp.get_tabs()             # Refresh the tabs list
@@ -50,7 +51,7 @@ def cdp_close_ad_tab(driver, log_callback=None):
         if log_callback:
             log_callback(f"Failed to close ad tab: {e}\n")
 
-def cdp_find_element(driver, cssSelector, retries=3, delay=1, log_callback=None):
+def cdp_find_element(driver, cssSelector, retries=4, delay=2, log_callback=None):
     """
     Attempts to find an element on the page, retrying if necessary.
     
@@ -61,21 +62,20 @@ def cdp_find_element(driver, cssSelector, retries=3, delay=1, log_callback=None)
     :param log_callback: Optional callback function for logging messages.
     :return: The found element or None if not found after retries.
     """
+    retry_count = 0
     for _ in range(retries):
         try:
-            # Wait for the element to be visible (this will block until visible or timeout)
-            driver.cdp.wait_for_element_visible(cssSelector, timeout=5)
+            retry_count += 1
             # Now check presence and visibility
-            isPresent = driver.cdp.is_element_present(cssSelector)
-            isVisible = driver.cdp.is_element_visible(cssSelector)
+            driver.cdp.assert_element_present(cssSelector, timeout=5)
             driver.cdp.assert_element_visible(cssSelector, timeout=5)
-            if isPresent and isVisible:
-                driver.cdp.assert_element_visible(cssSelector, timeout=5)
-                element = driver.cdp.find_element(cssSelector, timeout=5)
-                return element
+            element = driver.cdp.find_element(cssSelector, timeout=5)
+            return element
         except Exception as e:
             if log_callback:
                 log_callback(f"Retrying find element {cssSelector}...\n")
+            if retries - retry_count <= 2:
+                driver.cdp.refresh()  # Refresh the page if element not found
             time.sleep(delay)
     return None
 
@@ -136,6 +136,24 @@ def cdp_scroll_to_element(driver, cssSelector, log_callback=None):
     element = cdp_find_element(driver, cssSelector, retries=3, delay=1, log_callback=log_callback)
     if element:
         driver.cdp.scroll_into_view(cssSelector)
+
+def cdp_scroll_up_or_down(driver, direction='down', amount = 50, log_callback=None):
+    """
+    Scrolls the page up or down based on the specified direction.
+    
+    :param driver: The Selenium WebDriver instance.
+    :param direction: 'up' to scroll up, 'down' to scroll down.
+    :param log_callback: Optional callback function for logging messages.
+    """
+    if log_callback:
+        log_callback(f"Scrolling {direction}\n")
+    if direction == 'down':
+        driver.cdp.scroll_down(amount=amount) 
+    elif direction == 'up':
+        driver.cdp.scroll_up(amount=amount)
+    else:
+        raise ValueError("Direction must be 'up' or 'down'.")
+
 
 def cdp_click(driver, cssSelector, log_callback=None):
     """

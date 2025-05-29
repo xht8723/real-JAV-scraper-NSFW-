@@ -80,7 +80,6 @@ class MainWindow(QMainWindow):
         threading.Thread(target=self.scraper_thread, args=(directory,), daemon=True).start()
 
     def run_gfmerger(self):
-
         directory = self.ui.Dir.text()
         if not directory:
             self.update_logs("Please select a directory first.\n")
@@ -95,7 +94,6 @@ class MainWindow(QMainWindow):
 # Run scraper thread once button pressed.
 # Scapes javguru and then javtrailers for metadata.
 #-----------------------------------------------------
-
     def scraper_thread(self, directory, isheadless=False):
         def log_callback(message, color="black"):
             self.log_signal.update.emit(message, color)
@@ -136,7 +134,7 @@ class MainWindow(QMainWindow):
 
         if len(missing) > 0: # Stores entry for every failed javguru search
             cached_NFO = ut.readJson("NFO.json")
-            ut.cdp_gotoURL(driver, "https://javtrailers.com/")
+            ut.cdp_gotoURL(driver, "https://javtrailers.com/", log_callback=log_callback)
             for eachBanngo in missing:
                 ogfile = banngoTuple[1][eachBanngo]
                 try:
@@ -191,9 +189,10 @@ class MainWindow(QMainWindow):
             log_callback(f"Error: [{error_type}]{str(e)}\n", "red")
             log_callback(f"\n", "black")
 
-        try:
-            driver = ut.startFirefox("https://javmodel.com/",log_callback=log_callback, isheadless=isheadless)
-            for actor in Local_actors:
+
+        driver = ut.startChrome("https://javmodel.com/",log_callback=log_callback, isheadless=isheadless)
+        for actor in Local_actors:
+            try:
                 names = gfmerger.processSearch(driver, actor, cached_names, log_callback=log_callback)
                 if names == None:
                     log_callback(f"Failed to get search results for {actor}\n", "orange")
@@ -202,22 +201,21 @@ class MainWindow(QMainWindow):
                     continue
                 gfmerger.modifyNFO(Local_actors, actor, names, log_callback=log_callback, update_callback=update_table)
                 log_callback(f"Adding multi Names: {names}\n")
+            except Exception as e:
+                error_type = type(e).__name__
+                log_callback(f"Error: [{error_type}]{str(e)}\n", "red")
+                log_callback(f"\n", "black")
+                missing.append(actor)
+                continue
 
-            cached_names = ut.formatnameJson(cached_names)
-            ut.writeJson(cached_names, "names.json")
+        cached_names = ut.formatnameJson(cached_names)
+        ut.writeJson(cached_names, "names.json")
 
-        except Exception as e:
-            cached_names = ut.formatnameJson(cached_names)
-            ut.writeJson(cached_names, "names.json")
-            error_type = type(e).__name__
-            log_callback(f"Error: [{error_type}]{str(e)}\n", "red")
-            log_callback(f"\n", "black")
-
-        try:
-            if len(missing) > 0:
-                ut.gotoURL(driver, "https://jav.guru/jav-actress-list/")
-                cached_names = ut.readJson("names.json")
-                for actor in missing:
+        if len(missing) > 0:
+            ut.cdp_gotoURL(driver, "https://jav.guru/jav-actress-list/", log_callback=log_callback)
+            cached_names = ut.readJson("names.json")
+            for actor in missing:
+                try:
                     names = gfmerger.processSearchJavguru(driver, actor, cached_names, log_callback=log_callback)
                     if names == None:
                         log_callback(f"Failed to get search results for {actor}\n", "orange")
@@ -225,15 +223,15 @@ class MainWindow(QMainWindow):
                         continue
                     gfmerger.modifyNFO(Local_actors, actor, names, log_callback=log_callback, update_callback=update_table)
                     log_callback(f"Adding multi Names: {names}\n")
-                cached_names = ut.formatnameJson(cached_names)
-                ut.writeJson(cached_names, "names.json")
+                except Exception as e:
+                    error_type = type(e).__name__
+                    log_callback(f"Error: [{error_type}]{str(e)}\n", "red")
+                    log_callback(f"\n", "black")
+                    continue
 
-        except Exception as e:
             cached_names = ut.formatnameJson(cached_names)
             ut.writeJson(cached_names, "names.json")
-            error_type = type(e).__name__
-            log_callback(f"Error: [{error_type}]{str(e)}\n", "red")
-            log_callback(f"\n", "black")
+
         driver.quit()
         self.ui.actressSearch.setEnabled(True)
         log_callback("\nFinished modifying names!\n", "green")
