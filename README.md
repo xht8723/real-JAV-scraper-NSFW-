@@ -12,11 +12,9 @@ Scrapes JAV metadata for media system like Jellyfin/Emby from javguru/javTrailer
 
 Creating .nfo file, folder and cover image that are compatible with Jellyfin file structure.
 
-Using Selenium to simulate real browser to workaround cloudfare bots prevention.
+Using Seleniumbase[https://github.com/seleniumbase/SeleniumBase] to simulate real browser to workaround cloudfare bots prevention.
 
-Format actress names.
-
-Gather an actress's CN,JP,EN names and nicely organize them in nfo files so that jellyfin won't identify the same person as different actress.
+Format actress names. Gather an actress's CN,JP,EN names and nicely organize them in nfo files so that jellyfin won't identify the same person as different actress.
 
 Pressure tested over 3000+ movies.
 
@@ -28,22 +26,23 @@ Batch create hardlinks.
 
 Optional recursive directory search.
 
-nfo back ups.
-
 DLSITE ASMR support.
 
 ## How to install
 
-There will be .exe binary available in release page.
+There will be .exe binary available in release page, just use that.
+
+IMPORTANT NOTE: You must have chrome installed on your computer because this is utilizing chrome's CDP mode to avoid captchas.
 
 ___________________
 
+## Run it yourself
 
 ### Windows
 
 *Install python3 and run ```pip install -r requirements.txt```*
 
-*Download firefox driver "geckodriver.exe" and place in same folder.*
+*Install Chrome browser*
 
 Run main.pyw
 
@@ -51,7 +50,7 @@ Run main.pyw
 
 *Install python3 and run ```pip install -r requirements```*
 
-*Download Firefox driver "geckodriver.exe" and place in the same folder.*
+*Install Chrome browser*
 
 *Install libxcb-cursor0 with ```sudo apt install libxcb-cursor0```
 
@@ -64,6 +63,10 @@ Enter your folder path on the up right corner or just "..." to select one.
 Just click start.
 
 Your AV file must contain the AV label number. eg: "<ins>ABF-120</ins>WHATEVERwords.mp4" （MUST contain dash "-"）
+
+After AV being nicely organized and have NFO files in the folder, click "format actress name".
+
+This will go through all AV actresses in folder, search them online to gather JP/EN/CN names of actresses and edit the NFO actress information so that Jellyfin would dub them as the same person.
 
 ## Some other tools recommendation
 
@@ -79,28 +82,40 @@ Use [ReNamer](https://www.den4b.com/products/renamer) for adding dashes or manay
 
 Format actress name会从javmodel网站搜刮女优的中文日文英文名，并把不同语言的名字并作一个人。
 
-采用Selenium模拟真实浏览器，从而绕过各自反爬虫限制。
+采用Seleniumbase模拟真实浏览器，从而绕过各自反爬虫限制，采用chrome CDP模式绕过captcha“你是机器人吗？”
 
-一些小工具，批量重命名字幕文件，批量创建硬链接。
+一些小工具：批量重命名字幕文件，批量创建硬链接。
 
 ## 如何安装
 github的release页面会有打包好的exe文件，直接用就好。
+
+重要：必须安装Chrome浏览器。chrome的CDP模式是绕过captcha认证的关键。
 
 --------------
 
 如果想自己build，只要安装python3，然后安装requirements.txt里的东西就好了：```pip install -r requirements.txt```
 
-只在windows测试过，其它系统怎么样我完全不知道。
+下载Chrome浏览器。
 
-需要自己下载firefox的浏览器驱动，"geckodriver.exe"，把它放在同一文件夹下。
+只在windows测试过，其它系统怎么样我完全不知道。
 
 ## 使用
 
 选取或者自己输入放AV的文件夹地址，点击start就好。
 
+完成影片搜索之后，点击format actress name开始搜索女优的名字，并把日文名/中文名/英文名在NFO文件里并作一个人。这样Jellyfin就不会把同一个人但是名字语言不一样认作两个人了。
+
 重要：你的AV文件名里面必须要有番号和横杠。类似 “ABF-122澳门赌场1111.mp4”
 
 暂不支持没有横杠的文件。搜起来太地狱了。
+
+## 自己运行
+
+*安装python3 并运行： ```pip install -r requirements.txt```*
+
+*安装Chrome浏览器*
+
+*运行main.pyw*
 
 ## 一些其它工具推荐
 
