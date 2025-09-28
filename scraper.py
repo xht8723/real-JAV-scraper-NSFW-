@@ -187,4 +187,3 @@ def processSearchJavtrailers(driver, banngo, OGfile, cached_NFO, log_callback=No
             print(f"Caching metadata for {banngo}\n")
         cached_NFO[banngo] = data
     return data
-

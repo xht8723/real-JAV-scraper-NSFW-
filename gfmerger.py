@@ -17,17 +17,24 @@ def processSearch(driver, name, cached_names = None, log_callback=None):
     else:
         print("Searching for: " + name + "\n")
 
-    wait = ut.cdp_find_element(driver, 'svg[width="22"][height="22"][viewBox="0 0 22 22"]', log_callback=log_callback)
+    wait = ut.cdp_find_element(driver, '#page > nav.flq-navbar.flq-navbar-top.flq-navbar-top-cloud.flq-navbar-top-fixed > div > button.btn.btn-link.btn-icon-md.ms-5.d-none.d-sm-flex > svg', log_callback=log_callback)
     if not wait:
         raise(Exception("Search button not found. Please check connection.1"))
     
-    driver.cdp.wait_for_element_visible('svg[width="22"][height="22"][viewBox="0 0 22 22"]')
-    ut.cdp_scroll_to_element(driver, 'svg[width="22"][height="22"][viewBox="0 0 22 22"]', log_callback=log_callback)
-    ut.cdp_element_click(driver, 'svg[width="22"][height="22"][viewBox="0 0 22 22"]', log_callback=log_callback)
-    driver.cdp.wait_for_element_visible('.form-control.form-control-lg.flq-form-glass.flq-search-input')
-    ut.cdp_clear(driver, '.form-control.form-control-lg.flq-form-glass.flq-search-input', log_callback=log_callback)
-    ut.cdp_type(driver, '.form-control.form-control-lg.flq-form-glass.flq-search-input', name, log_callback=log_callback)
-    ut.cdp_press_keys(driver, '.form-control.form-control-lg.flq-form-glass.flq-search-input', "\n", log_callback=log_callback)
+    driver.cdp.wait_for_element_visible('#page > nav.flq-navbar.flq-navbar-top.flq-navbar-top-cloud.flq-navbar-top-fixed > div > button.btn.btn-link.btn-icon-md.ms-5.d-none.d-sm-flex > svg')
+    ut.cdp_scroll_to_element(driver, '#page > nav.flq-navbar.flq-navbar-top.flq-navbar-top-cloud.flq-navbar-top-fixed > div > button.btn.btn-link.btn-icon-md.ms-5.d-none.d-sm-flex > svg', log_callback=log_callback)
+    driver.cdp.wait_for_element_visible('#page > nav.flq-navbar.flq-navbar-top.flq-navbar-top-cloud.flq-navbar-top-fixed > div > button.btn.btn-link.btn-icon-md.ms-5.d-none.d-sm-flex > svg')
+    ut.cdp_element_click(driver, '#page > nav.flq-navbar.flq-navbar-top.flq-navbar-top-cloud.flq-navbar-top-fixed > div > button.btn.btn-link.btn-icon-md.ms-5.d-none.d-sm-flex > svg', log_callback=log_callback)
+
+    try:
+        driver.cdp.wait_for_element_visible('#flq_popup_search > div > div.flq-fancybox-body.pb-6 > div > div > form > input')
+        ut.cdp_clear(driver, '#flq_popup_search > div > div.flq-fancybox-body.pb-6 > div > div > form > input', log_callback=log_callback)
+        ut.cdp_type(driver, '#flq_popup_search > div > div.flq-fancybox-body.pb-6 > div > div > form > input', name, log_callback=log_callback)
+        ut.cdp_press_keys(driver, '#flq_popup_search > div > div.flq-fancybox-body.pb-6 > div > div > form > input', "\n", log_callback=log_callback)
+    except:
+        driver.cdp.wait_for_element_visible('#page > nav.flq-navbar.flq-navbar-top.flq-navbar-top-cloud.flq-navbar-top-fixed > div > button.btn.btn-link.btn-icon-md.ms-5.d-none.d-sm-flex > svg')
+        ut.cdp_scroll_to_element(driver, '#page > nav.flq-navbar.flq-navbar-top.flq-navbar-top-cloud.flq-navbar-top-fixed > div > button.btn.btn-link.btn-icon-md.ms-5.d-none.d-sm-flex > svg', log_callback=log_callback)
+        ut.cdp_element_click(driver, '#page > nav.flq-navbar.flq-navbar-top.flq-navbar-top-cloud.flq-navbar-top-fixed > div > button.btn.btn-link.btn-icon-md.ms-5.d-none.d-sm-flex > svg', log_callback=log_callback)
 
     wait = ut.cdp_find_element(driver, '.content-wrap', log_callback=log_callback)
     if not wait:
@@ -44,9 +51,9 @@ def processSearch(driver, name, cached_names = None, log_callback=None):
             print("No result found for " + name + "\n")
         return None
 
-    wait = ut.cdp_find_element(driver, '.card-title.h6', log_callback=log_callback)
-    ut.cdp_scroll_to_element(driver, '.card-title.h6', log_callback=log_callback)
-    ut.cdp_element_click(driver, '.card-title.h6', log_callback=log_callback)
+    wait = ut.cdp_find_element(driver, '#abc > div:nth-child(1) > div > div.card-body > h5 > a', log_callback=log_callback)
+    url = wait.get_attribute("href")
+    ut.cdp_open_url(driver, url, log_callback=log_callback)
 
     if 'hd' in driver.cdp.get_current_url():
         wait = ut.cdp_find_element(driver, 'a.flq-tag', log_callback=log_callback)

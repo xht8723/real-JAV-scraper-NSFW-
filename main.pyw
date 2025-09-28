@@ -241,9 +241,34 @@ class MainWindow(QMainWindow):
         log_callback(f"\n", "black")
 
     def update_logs(self, message, color = "black"):
-        if color != "black":
-            message = f'<span style="color:{color};">{message}</span>'
-        self.ui.logs.append(message)
+        from PySide6.QtGui import QTextCursor, QColor, QPalette
+        
+        # Use proper text formatting instead of HTML spans
+        cursor = self.ui.logs.textCursor()
+        cursor.movePosition(QTextCursor.End)
+        
+        # Set text color
+        format = cursor.charFormat()
+        if color == "red":
+            format.setForeground(QColor("red"))
+        elif color == "green":
+            format.setForeground(QColor("green"))
+        elif color == "orange":
+            format.setForeground(QColor("orange"))
+        else:  # black or default
+            format.setForeground(self.ui.logs.palette().color(QPalette.WindowText))
+        
+        cursor.setCharFormat(format)
+        cursor.insertText(message)
+        
+        # Reset to default color for next message
+        default_format = cursor.charFormat()
+        default_format.setForeground(self.ui.logs.palette().color(QPalette.WindowText))
+        cursor.setCharFormat(default_format)
+        
+        # Ensure cursor is at end and scroll to bottom
+        self.ui.logs.setTextCursor(cursor)
+        self.ui.logs.ensureCursorVisible()
 
     def update_table(self, original_filename, new_folder_name):
         if new_folder_name:
