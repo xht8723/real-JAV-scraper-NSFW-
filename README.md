@@ -1,3 +1,5 @@
+
+
 # Real JAV Scraper (NSFW)
 
 <img width="401" alt="屏幕截图 2025-02-25 074749" src="https://github.com/user-attachments/assets/8915057b-c0ad-436d-9e6f-17b710e819dd" alt="drawing" width="600"/>
@@ -48,7 +50,7 @@ Run main.pyw
 
 ### Linux
 
-*Install python3 and run ```pip install -r requirements```*
+*Install python3 and run ```pip install -r requirements.txt```*
 
 *Install Chrome browser*
 
